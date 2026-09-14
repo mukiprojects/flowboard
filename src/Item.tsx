@@ -37,7 +37,7 @@ type Props = {
 
 const HANDLE_SIZE = 10; // visible dot
 // Transparent hit area around each dot. Larger than the dot so the resize
-// cursor has a stable zone — the old flush-to-dot hit box made the cursor
+// cursor has a stable zone, the old flush-to-dot hit box made the cursor
 // flicker between resize/arrow on sub-pixel moves near a corner.
 const HANDLE_HIT = 18;
 
@@ -57,7 +57,7 @@ const RESIZE_CURSORS: Record<HandlePosT, string> = {
 };
 
 // Minimum height for text items. Keeps short stickies large enough to grab
-// reliably with a mouse — 48px works out to roughly two lines + padding.
+// reliably with a mouse, 48px works out to roughly two lines + padding.
 const MIN_TEXT_H = 48;
 
 export const ItemView = ({
@@ -105,7 +105,7 @@ export const ItemView = ({
     }
   }, [autoEdit, isEditableText, dispatch]);
 
-  // Losing selection always exits edit/interactive mode — keeps the two
+  // Losing selection always exits edit/interactive mode, keeps the two
   // states in sync without a flicker.
   useEffect(() => {
     if (!selected) {
@@ -174,7 +174,7 @@ export const ItemView = ({
         h: bbMaxY - bbMinY,
       };
 
-      // Other-item bboxes for snap targets — exclude the items being dragged,
+      // Other-item bboxes for snap targets, exclude the items being dragged,
       // exclude connectors (their bbox is just the line bbox; not useful as a
       // snap target), and zero-size items.
       const dragSet = new Set(dragIds);
@@ -271,12 +271,12 @@ export const ItemView = ({
       const startY = e.clientY;
       const orig = { x: item.x, y: item.y, w: item.w, h: item.h };
       // Drawings can be legitimately small (a flat line), so don't force them
-      // up to the 40px floor used for cards/media — that made resize feel jumpy.
+      // up to the 40px floor used for cards/media, that made resize feel jumpy.
       const minSize = item.type === "drawing" ? 12 : 40;
       const origFont = item.type === "text" ? item.fontSize || 16 : 0;
 
       // Aspect ratio is locked by default for images and embeds (stretching
-      // either looks bad — Instagram has a fixed ratio, photos shouldn't
+      // either looks bad, Instagram has a fixed ratio, photos shouldn't
       // squish). Shift inverts the default.
       const lockByDefault =
         item.type === "image" || item.type === "embed" || item.type === "video";
@@ -298,7 +298,7 @@ export const ItemView = ({
           committed = true;
         }
 
-        // Text corners UNIFORMLY SCALE the whole block — font, width, and height
+        // Text corners UNIFORMLY SCALE the whole block, font, width, and height
         // grow together like scaling an image, with the opposite corner pinned.
         // Because width scales in lockstep with the font, the text reflows to the
         // same line count, so height scales by the same factor: we can predict it
@@ -446,7 +446,7 @@ export const ItemView = ({
           <>
             {/* Text: left/right edges change WIDTH (text reflows, height
                 auto-grows); corners SCALE the font (box grows both ways). No
-                pure top/bottom handles — height is content-driven, so a raw
+                pure top/bottom handles, height is content-driven, so a raw
                 height handle would just fight the auto-grow effect. */}
             {(item.type === "text"
               ? (["tl", "tr", "bl", "br", "l", "r"] as HandlePos[])
@@ -593,7 +593,7 @@ const ItemBody = ({
 };
 
 // Rectangle / ellipse / sticky note. Rect + ellipse are pure SVG fills. A note
-// is a filled card that also holds centered text — double-click to edit (a plain
+// is a filled card that also holds centered text, double-click to edit (a plain
 // textarea; the card size is fixed, so text wraps/clips instead of auto-growing).
 const ShapeBody = ({
   item,
@@ -730,7 +730,7 @@ const ShapeBody = ({
 //   - viewing: a <div> containing the rendered markdown HTML.
 // Auto-grow measures whichever element is currently mounted. Switching between
 // the two can cause a small height jump (a "# Heading" raw line is shorter
-// than the rendered h1) — that's intentional: the box always fits whatever
+// than the rendered h1), that's intentional: the box always fits whatever
 // you're looking at. Click outside to leave edit mode and see the formatting.
 const TextBody = ({
   item,
@@ -750,7 +750,7 @@ const TextBody = ({
   // item.h. Always restore textarea inline height to "100%" after the temporary
   // "auto" measurement (otherwise React's reconciler doesn't sync the DOM and
   // the textarea ends up stuck at the browser's default rows height, which
-  // visually clips content — this was the "text spills out of the box" bug).
+  // visually clips content, this was the "text spills out of the box" bug).
   useLayoutEffect(() => {
     let measured: number;
     if (editing) {

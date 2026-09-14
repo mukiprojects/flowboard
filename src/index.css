@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /*
-  Geist — self-hosted variable fonts (Vercel's official release, downloaded from
+  Geist, self-hosted variable fonts (Vercel's official release, downloaded from
   github.com/vercel/geist-font, not Google Fonts). One woff2 per family covers
   every weight 100–900, so we get the whole range from a single ~70 KB file each.
 */
@@ -172,7 +172,7 @@ textarea {
   from { opacity: 0; transform: translateY(-5px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-/* Contextual panels (pen/connector/text/video) glide up from the toolbar — a
+/* Contextual panels (pen/connector/text/video) glide up from the toolbar, a
    short, clean ease-out, no overshoot. The translate(-50%) is in every keyframe
    so horizontal centering never drops mid-animation. */
 @keyframes cr-rise-cx {
@@ -185,7 +185,7 @@ textarea {
 }
 /* New items settle in with a quick fade + slight scale. NO fill mode on
    purpose: after it finishes the element reverts to its natural (un-transformed)
-   state, so a later inline transform — e.g. the text-resize scale preview — is
+   state, so a later inline transform, e.g. the text-resize scale preview, is
    never overridden by a lingering animation fill. */
 @keyframes cr-item-in {
   from { opacity: 0; transform: scale(0.965); }
@@ -212,7 +212,7 @@ textarea {
 }
 
 /* Live "W × H" / position tag that follows the cursor while resizing or moving
-   an item. Reads like a HUD readout — monospaced digits, quiet glass chip. */
+   an item. Reads like a HUD readout, monospaced digits, quiet glass chip. */
 .cr-measure {
   position: fixed;
   z-index: 2100;
@@ -260,7 +260,7 @@ textarea {
   .cr-trim-handle:hover, .cr-trim-handle:active { transform: none; }
 }
 
-/* Subtle dotted background for the canvas — helps users feel motion when panning. */
+/* Subtle dotted background for the canvas, helps users feel motion when panning. */
 .dot-grid {
   background-image: radial-gradient(
     circle,
@@ -287,7 +287,7 @@ textarea {
 }
 
 /*
-  Browsers treat <a> and <img> as draggable by default — clicking and pulling
+  Browsers treat <a> and <img> as draggable by default, clicking and pulling
   on a link inside a card kicks off a "drag-link-out" gesture instead of moving
   the card. We disable native drag at the CSS layer (and also via draggable=false
   on the elements themselves) so item-drag always wins.

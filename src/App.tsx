@@ -313,7 +313,7 @@ const App = ({
             return;
           }
         } catch {
-          // Not JSON — fall through to the regular paste paths below.
+          // Not JSON, fall through to the regular paste paths below.
         }
       }
 
@@ -344,7 +344,7 @@ const App = ({
         }
       }
 
-      // 2a. Multi-URL paste — if the clipboard text contains 2+ distinct
+      // 2a. Multi-URL paste, if the clipboard text contains 2+ distinct
       //     URLs, treat it as a bulk import (e.g. emailing yourself a list
       //     of inspiration links). Each URL becomes the right item type and
       //     they shelf-pack into a grid.
@@ -358,7 +358,7 @@ const App = ({
         }
       }
 
-      // 2b. Single URL we can find in the clipboard — text/uri-list,
+      // 2b. Single URL we can find in the clipboard, text/uri-list,
       //     text/plain (whole or extracted substring), or text/html href.
       const url = extractUrlFromClipboard(cd);
       if (url) {
@@ -399,10 +399,10 @@ const App = ({
     // pairs that flicker as you cross child elements, so we count them).
     let depth = 0;
     // We accept three flavors of drag:
-    //   1. Files dragged from the OS (Finder, etc.) — `Files` in types.
-    //   2. Images dragged FROM another browser tab — types include text/html
+    //   1. Files dragged from the OS (Finder, etc.), `Files` in types.
+    //   2. Images dragged FROM another browser tab, types include text/html
     //      with an <img> tag inside.
-    //   3. URLs dragged from address bars or web pages — text/uri-list /
+    //   3. URLs dragged from address bars or web pages, text/uri-list /
     //      text/plain.
     // For (2) and (3), we don't show the "Drop image to add to board" overlay
     // (it'd flicker on every text drag). The drop still works.
@@ -428,7 +428,7 @@ const App = ({
       if (isFileDrag(e) || isUrlDrag(e)) e.preventDefault();
     };
 
-    // Pull an image URL out of dragged HTML — covers the common "drag an image
+    // Pull an image URL out of dragged HTML, covers the common "drag an image
     // from Pinterest / a webpage / etc." case. We prefer this over the page
     // URL because we want the image, not the page that contains it.
     const extractDraggedImage = (dt: DataTransfer): string | null => {
@@ -508,7 +508,7 @@ const App = ({
         return;
       }
 
-      // 2. Image dragged from a browser tab — text/html with <img>.
+      // 2. Image dragged from a browser tab, text/html with <img>.
       const imgUrl = extractDraggedImage(dt);
       if (imgUrl) {
         e.preventDefault();
@@ -602,7 +602,7 @@ const SearchBar = ({
     inputRef.current?.focus();
   }, []);
 
-  // Reset position whenever the query changes — first Enter goes to match 0.
+  // Reset position whenever the query changes, first Enter goes to match 0.
   useEffect(() => {
     setIdx(-1);
   }, [query]);
@@ -815,7 +815,7 @@ const BulkImportModal = ({
           </div>
         </div>
         <div style={{ fontSize: 12, color: "var(--text-3)", lineHeight: 1.4 }}>
-          Paste anything containing URLs — one per line, comma-separated, or
+          Paste anything containing URLs, one per line, comma-separated, or
           an email body. Each will be added as the right kind of item
           (Instagram / X / image / link) and tiled into a grid.
         </div>
@@ -891,7 +891,7 @@ const EmptyHint = () => (
     }}
   >
     <div style={{ fontWeight: 600, color: "var(--text-3)" }}>Empty board</div>
-    <div>Drag in images, videos, audio, or links — or paste a URL</div>
+    <div>Drag in images, videos, audio, or links, or paste a URL</div>
     <div style={{ fontSize: 12, color: "var(--text-faint)" }}>
       …or pick a tool below to write and draw
     </div>

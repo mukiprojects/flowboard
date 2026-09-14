@@ -3,7 +3,7 @@
 // Given the bounding box of whatever's being dragged and the bounding boxes of
 // all other items on the board, find the smallest position adjustment that
 // puts a "reference line" of the dragged bbox flush with a reference line of
-// some other item — within a screen-pixel threshold.
+// some other item, within a screen-pixel threshold.
 //
 // Reference lines per item:
 //   X axis: left edge, vertical centre, right edge
@@ -16,7 +16,7 @@ export type Box = { x: number; y: number; w: number; h: number };
 
 export type Guide = {
   // Coordinate of the guide line in world units (the value of the matched
-  // edge — e.g. for an X-axis guide, this is the X coordinate of the line).
+  // edge, e.g. for an X-axis guide, this is the X coordinate of the line).
   pos: number;
   // The two boxes whose alignment caused the guide. We use them to draw a
   // line that spans both for visual context.

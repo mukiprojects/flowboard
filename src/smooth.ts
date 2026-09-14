@@ -1,9 +1,9 @@
 // Stroke smoothing.
 //
 // Raw mouse points produce visibly faceted polylines. We smooth in two passes:
-//   1. Distance-thinning — drop consecutive points within MIN_DIST world units
+//   1. Distance-thinning, drop consecutive points within MIN_DIST world units
 //      of each other. Cuts the path size dramatically without losing shape.
-//   2. Quadratic Bezier through midpoints — for each interior point P, draw a
+//   2. Quadratic Bezier through midpoints, for each interior point P, draw a
 //      curve whose control point is P and which ends at the midpoint of P and
 //      its successor. The curve passes smoothly through the midpoints, while
 //      P itself acts only as a tangent guide. This is the classic "rounded
@@ -35,7 +35,7 @@ export const thinPoints = (points: Pt[]): Pt[] => {
 export const smoothPathD = (points: Pt[]): string => {
   if (points.length === 0) return "";
   if (points.length === 1) {
-    // Render a "dot" for single-tap strokes by drawing a zero-length line —
+    // Render a "dot" for single-tap strokes by drawing a zero-length line , 
     // strokeLinecap=round will turn it into a circle of stroke-width radius.
     const p = points[0];
     return `M ${p.x.toFixed(2)} ${p.y.toFixed(2)} L ${p.x.toFixed(2)} ${p.y.toFixed(2)}`;

@@ -2,7 +2,7 @@
 // CSS transform applied. Items live inside it at world coordinates.
 //
 // Why CSS transforms instead of a real <canvas>: we need to host iframes
-// (Instagram, YouTube, TikTok). A <canvas> can only paint pixels — it can't
+// (Instagram, YouTube, TikTok). A <canvas> can only paint pixels, it can't
 // embed live web content. CSS transforms give us pan/zoom for free while
 // keeping items as real DOM elements.
 
@@ -70,7 +70,7 @@ export const Canvas = ({ state, dispatch }: Props) => {
   } | null>(null);
 
   // In-progress drawing stroke. Stored separately from the board so we don't
-  // reduce on every mousemove — only when the stroke ends.
+  // reduce on every mousemove, only when the stroke ends.
   const [activeStroke, setActiveStroke] = useState<{
     points: { x: number; y: number }[];
     color: string;
@@ -99,7 +99,7 @@ export const Canvas = ({ state, dispatch }: Props) => {
   // multi-drag handler in Item.tsx knows what else needs to move with it.
   const selectedIds = useMemo(() => [...selection], [selection]);
 
-  // Track space key — held for pan-anywhere.
+  // Track space key, held for pan-anywhere.
   useEffect(() => {
     const onKey = (e: KeyboardEvent, down: boolean) => {
       if (e.code === "Space") {
@@ -257,7 +257,7 @@ export const Canvas = ({ state, dispatch }: Props) => {
     return () => window.removeEventListener("keydown", onKey);
   }, [selection, state.board.items, dispatch]);
 
-  // Wheel handler — needs preventDefault so we attach via ref with passive:false.
+  // Wheel handler, needs preventDefault so we attach via ref with passive:false.
   useEffect(() => {
     const el = containerRef.current;
     if (!el) return;
@@ -308,7 +308,7 @@ export const Canvas = ({ state, dispatch }: Props) => {
       cancelZoom();
     };
     // viewRef.current keeps this handler reading the live view, so it never
-    // needs re-subscribing on pan/zoom — attach once.
+    // needs re-subscribing on pan/zoom, attach once.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dispatch]);
 
@@ -684,7 +684,7 @@ export const Canvas = ({ state, dispatch }: Props) => {
       onDoubleClick={(e) => {
         // Double-click empty canvas (select tool) drops a new text note right
         // where you clicked, ready to type. Ignore double-clicks that land on
-        // an item — those have their own behaviour (edit text / engage embed).
+        // an item, those have their own behaviour (edit text / engage embed).
         if (tool !== "select") return;
         if ((e.target as HTMLElement).closest("[data-item-id]")) return;
         if (!containerRef.current) return;
@@ -750,7 +750,7 @@ export const Canvas = ({ state, dispatch }: Props) => {
               item={it}
               selected={selection.has(it.id)}
               // Hide the per-item selection chrome while a multi-select is
-              // active — the group bounding box draws its own.
+              // active, the group bounding box draws its own.
               suppressIndividualHandles={selection.size > 1}
               autoEdit={editId === it.id}
               view={board.view}
@@ -891,7 +891,7 @@ export const Canvas = ({ state, dispatch }: Props) => {
         )}
       </div>
 
-      {/* Connector layer — SVG rendered in SCREEN coords above the world.
+      {/* Connector layer, SVG rendered in SCREEN coords above the world.
           Drawing in screen coords keeps stroke widths and arrowhead sizes
           constant regardless of zoom. */}
       <ConnectorLayer
@@ -903,7 +903,7 @@ export const Canvas = ({ state, dispatch }: Props) => {
         dispatch={dispatch}
       />
 
-      {/* Rubber-band marquee — drawn in screen coords above the world. */}
+      {/* Rubber-band marquee, drawn in screen coords above the world. */}
       {marquee && (
         <div
           style={{
@@ -1020,7 +1020,7 @@ const ConnectorLayer = ({
     };
   })();
 
-  // The single selected connector, if any — gets draggable endpoint handles.
+  // The single selected connector, if any, gets draggable endpoint handles.
   const selId = selection.size === 1 ? [...selection][0] : null;
   const selectedConnector =
     tool === "select"
@@ -1042,7 +1042,7 @@ const ConnectorLayer = ({
       const r = svg.getBoundingClientRect();
       return { x: cx - r.left, y: cy - r.top };
     };
-    // The opposite end's item — attaching both ends to it would be a self-loop
+    // The opposite end's item, attaching both ends to it would be a self-loop
     // the reducer discards, so we never highlight or accept it as a target.
     const otherId = end === "from" ? c.to : c.from;
     const hitAt = (cx: number, cy: number) => {
@@ -1161,7 +1161,7 @@ const ConnectorLayer = ({
               opacity: rerouting?.id === c.id ? 0.4 : 1,
             }}
           >
-            {/* Wide invisible "hit" path for easier clicking — only in select mode. */}
+            {/* Wide invisible "hit" path for easier clicking, only in select mode. */}
             <path
               d={d}
               fill="none"
@@ -1197,7 +1197,7 @@ const ConnectorLayer = ({
         );
       })}
 
-      {/* Endpoint handles for the selected connector — drag to re-attach. */}
+      {/* Endpoint handles for the selected connector, drag to re-attach. */}
       {selectedConnector &&
         (() => {
           const a = byId.get(selectedConnector.from);
@@ -1252,7 +1252,7 @@ const ConnectorLayer = ({
                   fill="var(--bg)"
                   stroke="var(--selection)"
                   strokeWidth={1.5}
-                  // While dragging, the handle sits under the cursor — make it
+                  // While dragging, the handle sits under the cursor, make it
                   // click-through so elementFromPoint can see the item beneath.
                   style={{ pointerEvents: isR ? "none" : "all", cursor: "grab" }}
                   onPointerDown={(e) => startReroute(selectedConnector, end, e)}
@@ -1280,10 +1280,10 @@ const ConnectorLayer = ({
 };
 
 // Build the SVG path "d" for a connector between two screen points, per shape:
-//   straight — a direct line
-//   curved   — a cubic bezier whose tangents leave each end along the dominant
+//   straight, a direct line
+//   curved  , a cubic bezier whose tangents leave each end along the dominant
 //              axis, so it bows smoothly (horizontal-ish links curve sideways)
-//   elbow    — a right-angle route that steps across the midpoint
+//   elbow   , a right-angle route that steps across the midpoint
 const connectorPath = (
   shape: "straight" | "curved" | "elbow",
   x1: number,
@@ -1503,7 +1503,7 @@ const MultiSelection = ({
         height: bbox.h,
         outline: "2px solid var(--selection)",
         outlineOffset: 2,
-        // The frame itself shouldn't intercept clicks — let them reach items
+        // The frame itself shouldn't intercept clicks, let them reach items
         // underneath. Only the handles below get pointer events.
         pointerEvents: "none",
       }}
@@ -1519,7 +1519,7 @@ const MultiSelection = ({
 
 type HandlePosLong = "tl" | "tr" | "bl" | "br" | "t" | "b" | "l" | "r";
 
-// Independent copy of the resize handle visuals — kept separate so it can
+// Independent copy of the resize handle visuals, kept separate so it can
 // re-enable pointerEvents on top of the parent's pointer-events:none.
 const GroupHandle = ({
   pos,

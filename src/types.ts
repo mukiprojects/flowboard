@@ -31,11 +31,11 @@ export type TextItem = Base & {
   fontSize: number;
   fontWeight?: number; // 400 = body, 600 = heading. Defaults to 400 if omitted.
   // Optional styling. All omit-safe so old boards keep working:
-  //   color — ink color. Undefined = "auto" (the theme's foreground, so it
+  //   color, ink color. Undefined = "auto" (the theme's foreground, so it
   //           inverts with light/dark like it always did).
-  //   bg    — note fill. Undefined = the default surface card; "transparent"
+  //   bg   , note fill. Undefined = the default surface card; "transparent"
   //           = no card (label style, no border); any color = a highlight fill.
-  //   align — text alignment. Undefined = left.
+  //   align, text alignment. Undefined = left.
   color?: string;
   bg?: string;
   align?: "left" | "center" | "right";
@@ -92,7 +92,7 @@ export type VideoItem = Base & {
 
 // An audio clip rendered as a waveform with an inline player. Always a local
 // file stored as a data URL (like images/local videos), so it persists and
-// travels in exports. peaks is the precomputed waveform — one 0..1 amplitude
+// travels in exports. peaks is the precomputed waveform, one 0..1 amplitude
 // per time bucket, decoded once at import (see audio.ts) so no renderer ever
 // has to touch the raw audio again. Optional because a decode can fail; the
 // player falls back to a placeholder pattern.
@@ -106,7 +106,7 @@ export type AudioItem = Base & {
 
 // A drawn primitive: a rectangle, an ellipse, or a sticky note (a filled rect
 // that also holds centered, editable text). All three share fill/stroke; notes
-// add text fields. Unlike text items, a note's box is a fixed size — its text
+// add text fields. Unlike text items, a note's box is a fixed size, its text
 // wraps/clips inside rather than auto-growing the card.
 export type ShapeItem = Base & {
   type: "shape";
@@ -175,7 +175,7 @@ export type Board = {
   updatedAt: number;
 };
 
-// Distributive Omit — preserves the discriminated union when removing keys.
+// Distributive Omit, preserves the discriminated union when removing keys.
 // Plain `Omit<Item, "id">` collapses the union into one big object and TS
 // loses the ability to narrow on `type`. Distribution only kicks in when a
 // generic type parameter is the bare LHS of a conditional, so we wrap it.

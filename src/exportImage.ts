@@ -106,7 +106,7 @@ async function getEmbedThumbnailUrl(it: EmbedItem): Promise<string | null> {
     switch (it.provider) {
       case "youtube": {
         const id = youtubeId(url);
-        // img.youtube.com is a public CDN — no auth, CORS-friendly for images.
+        // img.youtube.com is a public CDN, no auth, CORS-friendly for images.
         // Try maxres first; hqdefault is the reliable fallback.
         return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
       }
@@ -126,7 +126,7 @@ async function getEmbedThumbnailUrl(it: EmbedItem): Promise<string | null> {
         return fetchOembedThumb(
           `https://www.tiktok.com/oembed?url=${encodeURIComponent(it.url)}`,
         );
-      // twitter, instagram, reddit, loom, codepen, generic — no public
+      // twitter, instagram, reddit, loom, codepen, generic, no public
       // cross-origin thumbnail source; fall through to placeholder card.
       default:
         return null;
@@ -242,7 +242,7 @@ function renderTextItem(
   // Draw a run of styled words with word-wrapping. On-screen the text box uses
   // CSS `pre-wrap`/`break-word`, so a long paragraph flows onto multiple lines.
   // The old exporter drew each source line as one straight fillText and let the
-  // clip region chop off anything past the edge — text that looked fine on the
+  // clip region chop off anything past the edge, text that looked fine on the
   // board came out truncated in the PNG. Here we lay words out one at a time and
   // wrap to the next row when the next word would cross maxX, matching the board.
   const drawWrapped = (
@@ -269,7 +269,7 @@ function renderTextItem(
           curY += fz * lh; // wrap
           curX = startX;
           rowUsed = false;
-          if (curY > y + h) return; // past the box — clip handles the rest
+          if (curY > y + h) return; // past the box, clip handles the rest
         }
         ctx.fillStyle = ink;
         ctx.fillText(token, curX, curY + fz * 0.8);
@@ -478,7 +478,7 @@ function renderVideoItem(
   ctx.fillText(label, x + pad, y + mediaH + footerH / 2 + fz * 0.35, w - pad * 2);
 }
 
-// Audio renders faithfully in a PNG — the waveform is data we already have
+// Audio renders faithfully in a PNG, the waveform is data we already have
 // (item.peaks), so draw the real player: play badge, bars, footer with name.
 function renderAudioItem(
   ctx: CanvasRenderingContext2D,
@@ -653,7 +653,7 @@ function renderDrawingItem(
   ctx.restore();
 }
 
-// SVG path "d" for a connector — mirrors connectorPath in src/Canvas.tsx so the
+// SVG path "d" for a connector, mirrors connectorPath in src/Canvas.tsx so the
 // PNG matches the canvas (shape is scale-free, computed on the projected points).
 function connectorPathD(
   shape: string, x1: number, y1: number, x2: number, y2: number,
@@ -676,7 +676,7 @@ function connectorPathD(
 }
 
 // Tangent directions at each endpoint (radians), so arrowheads point along the
-// path — outward at the start, toward the tip at the end.
+// path, outward at the start, toward the tip at the end.
 function connectorEndAngles(
   shape: string, x1: number, y1: number, x2: number, y2: number,
 ): { endAngle: number; startAngle: number } {

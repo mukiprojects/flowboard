@@ -1,11 +1,11 @@
 // Rendering + playback for the audio item: a waveform you can click to seek,
 // a play/pause button, and a footer with the file name and a time readout.
 //
-// The waveform is drawn from item.peaks (precomputed at import — see audio.ts)
+// The waveform is drawn from item.peaks (precomputed at import, see audio.ts)
 // as SVG bars, so it inherits theme colors via CSS variables and stays crisp
 // at any zoom. Played progress is a second, ink-colored copy of the bars
 // revealed by a clipPath rect. Progress updates during playback go straight to
-// the DOM (clip rect width + time label text) from a rAF loop — no React
+// the DOM (clip rect width + time label text) from a rAF loop, no React
 // re-renders at 60fps.
 //
 // Unlike embeds/videos there's no double-click-to-engage step: the player is

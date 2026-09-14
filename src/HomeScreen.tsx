@@ -210,7 +210,7 @@ const BoardCard = ({
         }}
       >
         {board && <MiniBoard board={board} />}
-        {/* Delete button — only on hover */}
+        {/* Delete button, only on hover */}
         <button
           onClick={(e) => {
             e.stopPropagation();
@@ -273,7 +273,7 @@ const BoardCard = ({
 // Draws the actual board in miniature: real images, real (wrapped) text with its
 // fill/color, drawings as vector strokes, links/embeds/videos as labelled cards,
 // and connectors as faint lines. The whole thing is one SVG whose viewBox is the
-// board's content bounds, scaled to fit the card — so a preview looks like the
+// board's content bounds, scaled to fit the card, so a preview looks like the
 // board, not an abstract diagram.
 const MiniBoard = ({ board }: { board: Board }) => {
   const items = board.items;
@@ -547,7 +547,7 @@ const MiniCard = ({
   );
 };
 
-// Tiny static waveform for audio items in board previews — drawn from the
+// Tiny static waveform for audio items in board previews, drawn from the
 // item's stored peaks, so it looks like the actual clip.
 const MiniWaveform = ({ peaks }: { peaks?: number[] }) => {
   const n = 28;

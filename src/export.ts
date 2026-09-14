@@ -1,6 +1,6 @@
 // Export a board as a single self-contained HTML file.
 //
-// The exported file has zero dependencies — no React, no framework, no
+// The exported file has zero dependencies, no React, no framework, no
 // network calls (beyond the embeds themselves). It bundles:
 //   1. A vanilla-JS viewer that re-implements pan/zoom and item rendering
 //   2. The board data as JSON inside a <script> tag
@@ -166,7 +166,7 @@ ${VIEWER_JS}
 </html>`;
 };
 
-// The viewer is plain JS — it re-implements pan/zoom + rendering from scratch
+// The viewer is plain JS, it re-implements pan/zoom + rendering from scratch
 // so the export has zero npm dependencies and zero React baggage. The board
 // shape mirrors src/types.ts.
 const VIEWER_JS = `
@@ -183,7 +183,7 @@ const VIEWER_JS = `
   function escapeHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
 
-  // Mini markdown renderer — same rules as src/markdown.ts in the editor.
+  // Mini markdown renderer, same rules as src/markdown.ts in the editor.
   function safeUrl(u){return /^https?:\\/\\//i.test(String(u).trim())?String(u).trim():'#';}
   function mdInline(text){
     var codes=[];
@@ -510,7 +510,7 @@ const VIEWER_JS = `
     var t=Math.max(0,Math.min(tx,ty));
     return {x:start.x+dir.x*t,y:start.y+dir.y*t};
   }
-  // Line routing — mirrors connectorPath in src/Canvas.tsx (shape is scale-free,
+  // Line routing, mirrors connectorPath in src/Canvas.tsx (shape is scale-free,
   // so computing in world coords matches the on-screen curve).
   function connectorPath(shape,x1,y1,x2,y2){
     var dx=x2-x1, dy=y2-y1;

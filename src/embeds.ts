@@ -1,6 +1,6 @@
 // URL → embeddable iframe URL.
 //
-// We don't need provider scripts (Instagram embed.js etc.) — most platforms
+// We don't need provider scripts (Instagram embed.js etc.), most platforms
 // expose a plain /embed URL that returns a self-contained iframe page.
 
 import type { EmbedItem, ItemDraft } from "./types";
@@ -65,7 +65,7 @@ const spotifyPath = (url: URL): string | null => {
 
 // Reddit post: reddit.com/r/{sub}/comments/{id}/{slug}/...
 // We use the redditmedia.com embed URL that Reddit's "Embed this post" feature
-// produces — works as a plain iframe without their widget script.
+// produces, works as a plain iframe without their widget script.
 const redditInfo = (url: URL): { sub: string; id: string; slug: string } | null => {
   const h = url.hostname.replace(/^(?:www\.|old\.|new\.)/, "");
   if (h !== "reddit.com") return null;
@@ -200,7 +200,7 @@ export const detectEmbed = (input: string): EmbedInfo | null => {
 export const looksLikeUrl = (s: string): boolean =>
   /^https?:\/\/\S+$/i.test(s.trim());
 
-// Image URL heuristic — if the URL ends in a known image extension we treat it
+// Image URL heuristic, if the URL ends in a known image extension we treat it
 // as an image rather than an embed.
 export const looksLikeImageUrl = (s: string): boolean =>
   /\.(png|jpe?g|gif|webp|avif|svg)(\?.*)?$/i.test(s.trim());
@@ -212,7 +212,7 @@ export const itemFromUrl = (
   center: { x: number; y: number },
 ): ItemDraft => {
   // YouTube becomes a trimmable, looping video (not a plain embed) so any way
-  // of adding one — drag, paste, bulk import — lands you a clippable player.
+  // of adding one, drag, paste, bulk import, lands you a clippable player.
   const yt = youtubeVideoDraft(url, center);
   if (yt) return yt;
   if (looksLikeImageUrl(url)) {
@@ -248,7 +248,7 @@ export const itemFromUrl = (
 };
 
 // Pull every URL we can find out of a freeform string. Used for bulk import
-// when the user pastes a list of links from notes or email — handles plain
+// when the user pastes a list of links from notes or email, handles plain
 // lines, comma-separated, prose with embedded links, etc. Deduped, preserves
 // first-seen order.
 export const extractAllUrls = (text: string): string[] => {

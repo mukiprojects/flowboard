@@ -3,7 +3,7 @@
 // Two sources, one behaviour: play the clip [clipStart, clipEnd] and loop it.
 //   - Local files use a plain <video>; we watch timeupdate and seek back to
 //     clipStart when we cross clipEnd (native `loop` can't loop a sub-range).
-//   - YouTube uses the IFrame Player API so we can seek/loop programmatically —
+//   - YouTube uses the IFrame Player API so we can seek/loop programmatically , 
 //     the raw embed URL's start/end params can't loop a portion reliably.
 //
 // Like embeds, a transparent overlay sits over the media until the user
@@ -206,7 +206,7 @@ const YouTubeVideo = ({
   useEffect(() => {
     let cancelled = false;
     // YT.Player replaces its target node, so hand it a throwaway child we create
-    // imperatively — React never manages that node, avoiding removeChild clashes.
+    // imperatively, React never manages that node, avoiding removeChild clashes.
     const host = hostRef.current;
     if (!host) return;
     const target = document.createElement("div");

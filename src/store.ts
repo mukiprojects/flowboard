@@ -1,4 +1,4 @@
-// Board state. We use useReducer so all mutations go through one place — easier
+// Board state. We use useReducer so all mutations go through one place, easier
 // to add undo later, easier to autosave on every change.
 //
 // History model:
@@ -66,7 +66,7 @@ export type State = {
   // double-clicking a tool button in the toolbar.
   toolLocked: boolean;
   // Item id that should immediately enter edit mode (used for text items
-  // created via the text tool — they should be ready to type into without a
+  // created via the text tool, they should be ready to type into without a
   // double-click).
   editId: string | null;
   pen: PenStyle;
@@ -363,7 +363,7 @@ const apply = (state: State, action: Action): State => {
       return { ...state, editId: action.id };
     case "setTheme": {
       // "Ink" is the theme's foreground: black on light, white on dark. Flip it
-      // so anything drawn in ink follows the theme — flick the switch and black
+      // so anything drawn in ink follows the theme, flick the switch and black
       // ink becomes white and vice versa. Named colors (red/blue/…) stay put.
       const oldInk = state.theme === "dark" ? "#fafafa" : "#0a0a0a";
       const newInk = action.theme === "dark" ? "#fafafa" : "#0a0a0a";
@@ -506,14 +506,14 @@ export type SaveStatus = {
   // True between a board change and the next successful save.
   pending: boolean;
   // The last save attempt threw (storage full, private mode, etc.). While true,
-  // the user's recent changes are NOT persisted — surfaced prominently in the UI.
+  // the user's recent changes are NOT persisted, surfaced prominently in the UI.
   failed: boolean;
 };
 
 export const useStore = (boardId?: string, initialBoard?: Board) => {
   const [state, dispatch] = useReducer(reducer, undefined, () => {
     if (initialBoard) {
-      // Editor opened with a specific board — use it directly.
+      // Editor opened with a specific board, use it directly.
       const theme = loadTheme();
       return {
         board: initialBoard,

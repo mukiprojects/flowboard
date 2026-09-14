@@ -1,4 +1,4 @@
-// Helpers for the trimmable video item — YouTube URL parsing, draft builders
+// Helpers for the trimmable video item, YouTube URL parsing, draft builders
 // for both sources, and a metadata probe for local files.
 
 import type { ItemDraft } from "./types";
@@ -8,7 +8,7 @@ export const VIDEO_EXT = /\.(mp4|m4v|mov|webm|ogg|ogv)$/i;
 
 // Local files are stored inline as data URLs, so they persist in localStorage
 // and travel in exports. Base64 inflates bytes ~33% and localStorage is capped
-// near 5 MB per origin, so anything much past this won't survive a reload —
+// near 5 MB per origin, so anything much past this won't survive a reload , 
 // the "Add video" flow warns and steers large files toward YouTube.
 export const MAX_INLINE_VIDEO_BYTES = 6 * 1024 * 1024; // ~6 MB
 
@@ -34,7 +34,7 @@ export function parseYouTubeId(input: string): string | null {
   return null;
 }
 
-// A YouTube URL may carry ?t=90 / &start=90 — honour it as the initial clip
+// A YouTube URL may carry ?t=90 / &start=90, honour it as the initial clip
 // start so pasting a timestamped link lands where the user meant.
 function youtubeStartParam(input: string): number {
   try {

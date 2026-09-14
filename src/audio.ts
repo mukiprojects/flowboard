@@ -1,15 +1,15 @@
-// Helpers for the audio item — file detection, draft building, and the
+// Helpers for the audio item, file detection, draft building, and the
 // one-time waveform decode.
 //
 // The waveform is the interesting part: at import time we run the file through
 // the Web Audio API once and boil it down to PEAK_BUCKETS numbers (0..1 peak
 // amplitude per slice of the clip). Those peaks are stored ON the item, so
-// drawing the waveform — on the canvas, in home-screen previews, in the PNG
-// and HTML exports — is just "draw N bars", never "decode audio again".
+// drawing the waveform, on the canvas, in home-screen previews, in the PNG
+// and HTML exports, is just "draw N bars", never "decode audio again".
 
 import type { ItemDraft } from "./types";
 
-// Recognised audio extensions for drag/drop. .webm is deliberately absent —
+// Recognised audio extensions for drag/drop. .webm is deliberately absent , 
 // it's claimed by VIDEO_EXT and the drop handler checks video first.
 export const AUDIO_EXT = /\.(mp3|m4a|aac|wav|ogg|oga|opus|flac|aiff?)$/i;
 
@@ -45,7 +45,7 @@ export function fileAudioDraft(
 }
 
 // Decode the clip once and reduce it to duration + peaks. If the Web Audio
-// decoder rejects the codec (rare — a file <audio> can still play), fall back
+// decoder rejects the codec (rare, a file <audio> can still play), fall back
 // to probing duration with an off-screen element and no peaks; the player
 // then renders a neutral placeholder waveform.
 export async function audioFileMeta(
@@ -114,7 +114,7 @@ export function resamplePeaks(
   n: number,
 ): number[] {
   if (!peaks || peaks.length === 0) {
-    // Neutral rolling pattern — deliberately regular so it doesn't pretend to
+    // Neutral rolling pattern, deliberately regular so it doesn't pretend to
     // be real signal.
     return Array.from(
       { length: n },

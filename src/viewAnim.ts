@@ -1,7 +1,7 @@
 // Smoothly animates the canvas camera (pan + zoom) between two views.
 //
-// Discrete "jump" commands — Fit, Reset zoom, Zoom-to-selection, the +/- zoom
-// buttons — used to snap the view instantly, which reads as cheap. They now
+// Discrete "jump" commands, Fit, Reset zoom, Zoom-to-selection, the +/- zoom
+// buttons, used to snap the view instantly, which reads as cheap. They now
 // call animateView() so the board glides like a real camera.
 //
 // Live gestures (wheel / trackpad pan-zoom) stay instant: they call

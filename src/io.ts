@@ -2,7 +2,7 @@
 //
 // .crboard is just a JSON file with a tiny version header. We use the browser's
 // download trick (a temporary <a> element) to save and an <input type="file">
-// to open — no server, no library.
+// to open, no server, no library.
 
 import type { Board } from "./types";
 

@@ -2,13 +2,13 @@
 //
 // Why not just download a file every 10 min? Each download would pop the
 // browser's "save file" dialog and dump into ~/Downloads with names like
-// "crboard-autobackup (3).crboard" — the opposite of what the user asked for.
+// "crboard-autobackup (3).crboard", the opposite of what the user asked for.
 // Instead, we ask once via showDirectoryPicker(), keep the resulting handle
 // in IndexedDB so we can resume across reloads, and write straight into the
 // folder. Same filename every time → previous backup gets overwritten.
 //
 // Browser support: Chrome / Edge / Opera / Brave / Arc all support this.
-// Safari and Firefox don't yet — pickBackupDir() reports unsupported and we
+// Safari and Firefox don't yet, pickBackupDir() reports unsupported and we
 // keep the menu entry hidden.
 
 import type { Board } from "./types";
@@ -60,7 +60,7 @@ const idbDel = async (key: string): Promise<void> => {
   });
 };
 
-// File System Access API types aren't fully in the standard lib yet — narrow
+// File System Access API types aren't fully in the standard lib yet, narrow
 // them locally so TS stays happy across browser versions.
 type FSPermissionDescriptor = { mode: "read" | "readwrite" };
 type FSDirHandleWithPerms = FileSystemDirectoryHandle & {
@@ -105,7 +105,7 @@ export const pickBackupDir =
       await idbSet(HANDLE_KEY, handle);
       return handle;
     } catch {
-      // User cancelled the picker — not an error.
+      // User cancelled the picker, not an error.
       return null;
     }
   };
@@ -119,7 +119,7 @@ export const loadSavedBackupDir =
       const h = await idbGet<FileSystemDirectoryHandle>(HANDLE_KEY);
       if (!h) return null;
       const wp = h as FSDirHandleWithPerms;
-      if (!wp.queryPermission) return h; // older API — assume granted
+      if (!wp.queryPermission) return h; // older API, assume granted
       const perm = await wp.queryPermission({ mode: "readwrite" });
       return perm === "granted" ? h : null;
     } catch {
@@ -148,7 +148,7 @@ export const clearBackupDir = async (): Promise<void> => {
 
 // Write the current board to a single fixed filename. createWritable() →
 // write() → close() truncates the existing file, so each backup replaces the
-// previous one — exactly the "delete the old one" behavior the user asked for.
+// previous one, exactly the "delete the old one" behavior the user asked for.
 const FILENAME = "crboard-autobackup.crboard";
 
 export const writeBackup = async (

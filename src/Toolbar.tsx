@@ -208,7 +208,7 @@ export const Toolbar = ({
                 onClick={() => {
                   if (!shareCopied) copyShareLink();
                 }}
-                subtitle="Opens in browser — no download needed"
+                subtitle="Opens in browser, no download needed"
               >
                 {shareCopied ? "Link copied!" : "Copy share link"}
               </MenuItem>
@@ -240,7 +240,7 @@ export const Toolbar = ({
                           await backupActions.enable();
                           setMenuOpen(false);
                         }}
-                        subtitle={`${backup.folderName ?? "—"} / ${backup.filename}${
+                        subtitle={`${backup.folderName ?? ", "} / ${backup.filename}${
                           backup.lastBackupAt
                             ? `  ·  ${formatRelative(backup.lastBackupAt)}`
                             : "  ·  saving…"
@@ -443,7 +443,7 @@ export const Toolbar = ({
 };
 
 // Floating panel that appears above the toolbar when the pen tool is active.
-// First swatch is "ink" — black on a light canvas, white on a dark one, so it
+// First swatch is "ink", black on a light canvas, white on a dark one, so it
 // always reads against the background (and auto-inverts with the theme). The
 // rest are fixed primaries that stay the same in either theme.
 const INK = { light: "#0a0a0a", dark: "#fafafa" } as const;
@@ -552,7 +552,7 @@ const CONNECTOR_ENDS = ["one", "both", "none"] as const;
 
 // Shared color / width / shape / arrowhead controls. Used both by the connector
 // tool (setting defaults for new connectors) and by a selected connector (editing
-// it in place) — the caller supplies onChange to route the patch appropriately.
+// it in place), the caller supplies onChange to route the patch appropriately.
 const ConnectorControls = ({
   value,
   theme,
@@ -1160,7 +1160,7 @@ const DrawingOptions = ({
   );
 };
 
-// True when at least one selected item is a text item — controls visibility
+// True when at least one selected item is a text item, controls visibility
 // of the text-style preset panel.
 const hasSelectedText = (state: State) =>
   state.board.items.some(
@@ -1609,7 +1609,7 @@ const AGlyph = ({ type }: { type: AGlyphType }) => {
   );
 };
 
-// The lone selected item, iff it's a video — controls the trim panel's
+// The lone selected item, iff it's a video, controls the trim panel's
 // visibility (mirrors hasSelectedText for the text preset panel).
 const selectedVideo = (state: State): VideoItem | null => {
   if (state.selection.size !== 1) return null;
@@ -1652,7 +1652,7 @@ const VideoOptions = ({
   const end = item.clipEnd ?? dur;
 
   // Live playhead: drive the marker's position with rAF straight from the
-  // player's clock — no React re-render per frame, so it stays buttery.
+  // player's clock, no React re-render per frame, so it stays buttery.
   useEffect(() => {
     if (dur <= 0) return;
     let raf = 0;
@@ -1980,7 +1980,7 @@ const SaveIndicator = ({ status }: { status: SaveStatus }) => {
         }}
       />
       {status.failed
-        ? "Can't save — storage full"
+        ? "Can't save, storage full"
         : status.pending
           ? "Saving…"
           : "Saved"}
@@ -2365,7 +2365,7 @@ const MenuItem = ({
 );
 
 // "5 minutes ago" / "just now" formatting for the backup status line. Updates
-// only when the menu rerenders, which is fine — the absolute timestamp is in
+// only when the menu rerenders, which is fine, the absolute timestamp is in
 // the title attribute if you really want precision.
 const formatRelative = (ts: number): string => {
   const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
@@ -2404,12 +2404,12 @@ const ToolButton = ({
     onDoubleClick={onDoubleClick}
     title={
       shortcut
-        ? `${label} (${shortcut})${onDoubleClick ? " — double-click to lock" : ""}`
+        ? `${label} (${shortcut})${onDoubleClick ? ", double-click to lock" : ""}`
         : label
     }
     aria-label={label}
     style={{
-      // Transparent — the sliding .tool-pill chip behind provides the active
+      // Transparent, the sliding .tool-pill chip behind provides the active
       // affordance. The active icon brightens to full --text; inactive icons sit
       // dimmed at --text-3 so they stay legible even as the chip passes over them.
       position: "relative",

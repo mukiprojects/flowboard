@@ -13,7 +13,7 @@ import { emptyBoard } from "./types";
 
 // A tiny schematic of the board for the home-screen preview: each item as a
 // normalized rectangle (0..1) plus a one-letter type code for coloring. No
-// pixels, no image data — just geometry, so it's cheap to store and render.
+// pixels, no image data, just geometry, so it's cheap to store and render.
 export type ThumbRect = { x: number; y: number; w: number; h: number; t: string };
 export type BoardThumb = { r: ThumbRect[]; w: number; h: number };
 
@@ -84,7 +84,7 @@ export function backfillThumbs(): BoardMeta[] {
     try {
       localStorage.setItem(INDEX_KEY, JSON.stringify(list));
     } catch {
-      /* quota — non-fatal */
+      /* quota, non-fatal */
     }
   }
   return list;
@@ -105,7 +105,7 @@ export function loadBoardById(id: string): Board | null {
 
 // Throws if localStorage rejects the write (quota exceeded, private-mode, etc.).
 // Callers that must surface "your work isn't being saved" rely on this throwing
-// rather than silently dropping the data — see the autosave in store.ts.
+// rather than silently dropping the data, see the autosave in store.ts.
 export function saveBoardById(id: string, board: Board): void {
   localStorage.setItem(boardDataKey(id), JSON.stringify(board));
   // Keep the index in sync.
@@ -140,8 +140,8 @@ export function createNewBoard(): { id: string; board: Board } {
   const id = nanoid(8);
   const board = emptyBoard();
   // An empty board is tiny, but if storage is completely full even this can
-  // throw — don't let that block opening the editor; autosave will surface it.
-  try { saveBoardById(id, board); } catch { /* storage full — non-fatal here */ }
+  // throw, don't let that block opening the editor; autosave will surface it.
+  try { saveBoardById(id, board); } catch { /* storage full, non-fatal here */ }
   return { id, board };
 }
 
