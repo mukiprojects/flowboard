@@ -15,6 +15,7 @@ import { clampZoom, fitToBounds, screenToWorld, zoomAt } from "./coords";
 import { animateView, cancelViewAnim } from "./viewAnim";
 import { smoothPathD, thinPoints } from "./smooth";
 import type { Guide } from "./snap";
+import { align, distribute, type Pos } from "./align";
 
 type Props = {
   state: State;
@@ -132,6 +133,21 @@ export const Canvas = ({ state, dispatch }: Props) => {
       if (t?.isContentEditable || t?.tagName === "INPUT" || t?.tagName === "TEXTAREA") return;
 
       const mod = e.metaKey || e.ctrlKey;
+
+      // Alt+H / Alt+V: align centers. e.code, since Option+H types a symbol on Mac.
+      if (e.altKey && !mod && (e.code === "KeyH" || e.code === "KeyV")) {
+        const sel = state.board.items.filter(
+          (it) => selection.has(it.id) && it.type !== "connector",
+        );
+        if (sel.length < 2) return;
+        e.preventDefault();
+        dispatch({ type: "commitHistory" });
+        dispatch({
+          type: "setItemPositions",
+          positions: align(sel, e.code === "KeyH" ? "cx" : "cy"),
+        });
+        return;
+      }
 
       // Undo / redo. Cmd+Z, Shift+Cmd+Z or Cmd+Y.
       if (mod && !e.shiftKey && (e.key === "z" || e.key === "Z")) {
@@ -924,6 +940,9 @@ export const Canvas = ({ state, dispatch }: Props) => {
           x={ctxMenu.x}
           y={ctxMenu.y}
           item={state.board.items.find((it) => it.id === ctxMenu.itemId)}
+          selected={state.board.items.filter(
+            (it) => selection.has(it.id) && it.type !== "connector",
+          )}
           dispatch={dispatch}
           close={() => setCtxMenu(null)}
         />
@@ -1597,12 +1616,14 @@ const ContextMenu = ({
   x,
   y,
   item,
+  selected,
   dispatch,
   close,
 }: {
   x: number;
   y: number;
   item: Item | undefined;
+  selected: Item[];
   dispatch: React.Dispatch<Action>;
   close: () => void;
 }) => {
@@ -1635,6 +1656,20 @@ const ContextMenu = ({
     close();
   };
 
+  // Multi-selection (the right-clicked item is part of it, Item.tsx keeps the
+  // selection intact) gets align / distribute entries.
+  const multi = selected.length >= 2 && selected.some((i) => i.id === item.id);
+  const place = (positions: Pos[]) =>
+    run(() => {
+      if (positions.length === 0) return;
+      dispatch({ type: "commitHistory" });
+      dispatch({ type: "setItemPositions", positions });
+    });
+  // Tidy up: equal gaps along whichever axis the selection spans further.
+  const wide =
+    Math.max(...selected.map((i) => i.x + i.w)) - Math.min(...selected.map((i) => i.x)) >=
+    Math.max(...selected.map((i) => i.y + i.h)) - Math.min(...selected.map((i) => i.y));
+
   return (
     <div
       className="glass cr-menu"
@@ -1650,6 +1685,37 @@ const ContextMenu = ({
         transformOrigin: "top left",
       }}
     >
+      {multi && (
+        <>
+          <CtxItem onClick={place(align(selected, "left"))}>Align left</CtxItem>
+          <CtxItem onClick={place(align(selected, "cx"))} kbd="⌥H">
+            Align horizontal centers
+          </CtxItem>
+          <CtxItem onClick={place(align(selected, "right"))}>Align right</CtxItem>
+          <CtxItem onClick={place(align(selected, "top"))}>Align top</CtxItem>
+          <CtxItem onClick={place(align(selected, "cy"))} kbd="⌥V">
+            Align vertical centers
+          </CtxItem>
+          <CtxItem onClick={place(align(selected, "bottom"))}>Align bottom</CtxItem>
+          {selected.length >= 3 && (
+            <>
+              <CtxSep />
+              <CtxItem onClick={place(distribute(selected, "x", "centers"))}>
+                Distribute horizontally
+              </CtxItem>
+              <CtxItem onClick={place(distribute(selected, "y", "centers"))}>
+                Distribute vertically
+              </CtxItem>
+              <CtxItem
+                onClick={place(distribute(selected, wide ? "x" : "y", "gaps"))}
+              >
+                Equal gap spacing (tidy up)
+              </CtxItem>
+            </>
+          )}
+          <CtxSep />
+        </>
+      )}
       <CtxItem onClick={run(() => dispatch({ type: "bringToFront", id: item.id }))} kbd="⌘]">
         Bring to front
       </CtxItem>
