@@ -25,7 +25,7 @@ function bufToB64(buf: ArrayBuffer): string {
 // @font-face block with Geist (Sans + Mono) inlined as base64. Falls back to an
 // empty string if the fonts can't be read, so the export still opens (system
 // fonts) rather than failing.
-async function fontFaceCss(): Promise<string> {
+export async function fontFaceCss(): Promise<string> {
   try {
     const [sans, mono] = await Promise.all([
       fetch(geistUrl).then((r) => r.arrayBuffer()).then(bufToB64),

@@ -20,6 +20,8 @@ import type { BackupActions, BackupInfo } from "./App";
 import { openBoardFile, saveBoardFile } from "./io";
 import { downloadHtml } from "./export";
 import { downloadImage } from "./exportImage";
+import { downloadSvg } from "./exportSvg";
+import { downloadPdf } from "./exportPdf";
 import { buildShareUrl, encodeShareHash } from "./share";
 import { clampZoom, fitToBounds, zoomCenter } from "./coords";
 import { animateView } from "./viewAnim";
@@ -229,6 +231,24 @@ export const Toolbar = ({
                 subtitle="High-res PNG of the whole board (zoom-in quality)"
               >
                 Export as PNG…
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setMenuOpen(false);
+                  downloadSvg(board, state.theme);
+                }}
+                subtitle="Vector graphic for slides, Figma and documents"
+              >
+                Export as SVG…
+              </MenuItem>
+              <MenuItem
+                onClick={() => {
+                  setMenuOpen(false);
+                  downloadPdf(board, state.theme);
+                }}
+                subtitle="Print-ready vector PDF document"
+              >
+                Export as PDF…
               </MenuItem>
               {backup.supported && (
                 <>

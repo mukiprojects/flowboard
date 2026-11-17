@@ -46,7 +46,7 @@ const MAX_DIM = 12000;
 
 // ── Geometry helpers ─────────────────────────────────────────────────────────
 
-function getBounds(items: Item[]) {
+export function getBounds(items: Item[]) {
   if (items.length === 0) return null;
   let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
   for (const it of items) {
@@ -58,7 +58,7 @@ function getBounds(items: Item[]) {
   return { x: minX, y: minY, w: maxX - minX, h: maxY - minY };
 }
 
-function rayBoxExit(
+export function rayBoxExit(
   start: { x: number; y: number },
   dir:   { x: number; y: number },
   box:   { x: number; y: number; w: number; h: number },
@@ -154,7 +154,7 @@ type Colors = {
   text: string; text2: string; text3: string;
 };
 
-function themeColors(theme: Theme): Colors {
+export function themeColors(theme: Theme): Colors {
   const d = theme === "dark";
   return {
     bg:      d ? "#0a0a0a" : "#fafafa",
@@ -655,7 +655,7 @@ function renderDrawingItem(
 
 // SVG path "d" for a connector, mirrors connectorPath in src/Canvas.tsx so the
 // PNG matches the canvas (shape is scale-free, computed on the projected points).
-function connectorPathD(
+export function connectorPathD(
   shape: string, x1: number, y1: number, x2: number, y2: number,
 ): string {
   const dx = x2 - x1, dy = y2 - y1;
