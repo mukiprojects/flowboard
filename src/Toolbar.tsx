@@ -23,6 +23,7 @@ import { downloadImage } from "./exportImage";
 import { buildShareUrl, encodeShareHash } from "./share";
 import { clampZoom, fitToBounds, zoomCenter } from "./coords";
 import { animateView } from "./viewAnim";
+import { align, distribute, type DistributeMode, type Pos } from "./align";
 
 // Left-to-right order of the bottom toolbar tools. Drives the sliding pill's
 // horizontal position (index × button pitch).
@@ -1474,8 +1475,8 @@ const AlignIcon = ({ align }: { align: "left" | "center" | "right" }) => {
 
 // Align + distribute panel, shown when 2+ items are selected. Operates on the
 // selection's bounding box in world coords and dispatches new positions in one
-// undoable step. Distribute needs 3+ items (spaces the middle ones evenly by
-// center between the two extremes).
+// undoable step. Distribute needs 3+ items (spaces the middle ones evenly,
+// by center or, with "Equal gaps", by the empty space between edges).
 type AGlyphType =
   | "left" | "cx" | "right"
   | "top" | "cy" | "bottom"
@@ -1488,65 +1489,18 @@ const AlignOptions = ({
   state: State;
   dispatch: React.Dispatch<Action>;
 }) => {
+  const [gapMode, setGapMode] = useState(false);
   const sel = state.board.items.filter(
     (it) => state.selection.has(it.id) && it.type !== "connector",
   );
   if (sel.length < 2) return null;
 
-  const minX = Math.min(...sel.map((i) => i.x));
-  const maxR = Math.max(...sel.map((i) => i.x + i.w));
-  const minY = Math.min(...sel.map((i) => i.y));
-  const maxB = Math.max(...sel.map((i) => i.y + i.h));
-
-  const commit = (positions: { id: string; x: number; y: number }[]) => {
+  const commit = (positions: Pos[]) => {
+    if (positions.length === 0) return;
     dispatch({ type: "commitHistory" });
     dispatch({ type: "setItemPositions", positions });
   };
-
-  const alignH = (mode: "left" | "cx" | "right") =>
-    commit(
-      sel.map((i) => ({
-        id: i.id,
-        y: i.y,
-        x:
-          mode === "left"
-            ? minX
-            : mode === "right"
-              ? maxR - i.w
-              : (minX + maxR) / 2 - i.w / 2,
-      })),
-    );
-  const alignV = (mode: "top" | "cy" | "bottom") =>
-    commit(
-      sel.map((i) => ({
-        id: i.id,
-        x: i.x,
-        y:
-          mode === "top"
-            ? minY
-            : mode === "bottom"
-              ? maxB - i.h
-              : (minY + maxB) / 2 - i.h / 2,
-      })),
-    );
-  const distribute = (axis: "dh" | "dv") => {
-    if (sel.length < 3) return;
-    const c = (i: (typeof sel)[number]) =>
-      axis === "dh" ? i.x + i.w / 2 : i.y + i.h / 2;
-    const sorted = [...sel].sort((a, b) => c(a) - c(b));
-    const firstC = c(sorted[0]);
-    const lastC = c(sorted[sorted.length - 1]);
-    const n = sorted.length;
-    commit(
-      sorted.map((i, idx) => {
-        const target = firstC + ((lastC - firstC) * idx) / (n - 1);
-        return axis === "dh"
-          ? { id: i.id, x: target - i.w / 2, y: i.y }
-          : { id: i.id, x: i.x, y: target - i.h / 2 };
-      }),
-    );
-  };
-
+  const mode: DistributeMode = gapMode ? "gaps" : "centers";
   const canDistribute = sel.length >= 3;
 
   const btn = (type: AGlyphType, title: string, run: () => void, disabled = false) => (
@@ -1595,25 +1549,43 @@ const AlignOptions = ({
         zIndex: 1000,
       }}
     >
-      {btn("left", "Align left", () => alignH("left"))}
-      {btn("cx", "Align horizontal centers", () => alignH("cx"))}
-      {btn("right", "Align right", () => alignH("right"))}
+      {btn("left", "Align left", () => commit(align(sel, "left")))}
+      {btn("cx", "Align horizontal centers (Alt+H)", () => commit(align(sel, "cx")))}
+      {btn("right", "Align right", () => commit(align(sel, "right")))}
       <VDivider />
-      {btn("top", "Align top", () => alignV("top"))}
-      {btn("cy", "Align vertical centers", () => alignV("cy"))}
-      {btn("bottom", "Align bottom", () => alignV("bottom"))}
+      {btn("top", "Align top", () => commit(align(sel, "top")))}
+      {btn("cy", "Align vertical centers (Alt+V)", () => commit(align(sel, "cy")))}
+      {btn("bottom", "Align bottom", () => commit(align(sel, "bottom")))}
       <VDivider />
       {btn(
         "dh",
         canDistribute ? "Distribute horizontally" : "Distribute needs 3+ items",
-        () => distribute("dh"),
+        () => commit(distribute(sel, "x", mode)),
         !canDistribute,
       )}
       {btn(
         "dv",
         canDistribute ? "Distribute vertically" : "Distribute needs 3+ items",
-        () => distribute("dv"),
+        () => commit(distribute(sel, "y", mode)),
         !canDistribute,
+      )}
+      {canDistribute && (
+        <button
+          className="chrome-btn"
+          onClick={() => setGapMode((g) => !g)}
+          aria-pressed={gapMode}
+          title="Equal gaps: space by the gap between edges instead of center to center, so mixed sizes don't overlap"
+          style={{
+            height: 30,
+            padding: "0 10px",
+            fontSize: 12,
+            borderRadius: "var(--radius-sm)",
+            background: gapMode ? "var(--text)" : "transparent",
+            color: gapMode ? "var(--bg)" : "var(--text)",
+          }}
+        >
+          Equal gaps
+        </button>
       )}
     </div>
   );
@@ -2271,6 +2243,8 @@ const HelpOverlay = ({ onClose }: { onClose: () => void }) => {
     ["Esc", "Deselect"],
     ["Space + drag", "Pan (any tool)"],
     ["Drag empty canvas", "Rubber-band select (Shift extends)"],
+    ["Alt+H / Alt+V", "Align horizontal / vertical centers (2+ selected)"],
+    ["2+ items selected", "Align / Distribute bar appears; also in right-click menu"],
     ["Right-click item", "Context menu"],
     ["Hold Shift on resize", "Toggle aspect-ratio lock"],
     ["?", "Show this help"],
