@@ -110,11 +110,11 @@ export type AudioItem = Base & {
 // wraps/clips inside rather than auto-growing the card.
 export type ShapeItem = Base & {
   type: "shape";
-  shape: "rect" | "ellipse" | "note";
+  shape: "rect" | "ellipse" | "note" | "diamond";
   fill: string; // fill color, or "transparent" for outline-only
   stroke: string; // border color, or "transparent" for no border
   strokeWidth: number;
-  // Sticky-note text (shape === "note").
+  // Sticky-note / diamond text (shape === "note" | "diamond").
   text?: string;
   textColor?: string;
   fontSize?: number;

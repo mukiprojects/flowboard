@@ -83,7 +83,7 @@ export const Canvas = ({ state, dispatch }: Props) => {
     y: number;
     w: number;
     h: number;
-    kind: "rect" | "ellipse" | "note";
+    kind: "rect" | "ellipse" | "note" | "diamond";
   } | null>(null);
 
   // Live "W × H" / position readout that follows the cursor during a
@@ -451,16 +451,16 @@ export const Canvas = ({ state, dispatch }: Props) => {
           w: b.w,
           h: b.h,
         };
-        if (s.kind === "note") {
+        if (s.kind === "note" || s.kind === "diamond") {
           dispatch({
             type: "addItem",
             edit: true,
             item: {
               type: "shape",
-              shape: "note",
+              shape: s.kind,
               ...common,
               text: "",
-              textColor: noteTextColor(s.fill),
+              textColor: s.fill === "transparent" ? undefined : noteTextColor(s.fill),
               fontSize: 16,
             },
           });
@@ -818,6 +818,15 @@ export const Canvas = ({ state, dispatch }: Props) => {
                 cy={shapeDraft.y + shapeDraft.h / 2}
                 rx={shapeDraft.w / 2}
                 ry={shapeDraft.h / 2}
+                fill="var(--overlay-tint)"
+                stroke="var(--selection)"
+                strokeWidth={1}
+                strokeDasharray="4 3"
+                vectorEffect="non-scaling-stroke"
+              />
+            ) : shapeDraft.kind === "diamond" ? (
+              <polygon
+                points={`${shapeDraft.x + shapeDraft.w / 2},${shapeDraft.y} ${shapeDraft.x + shapeDraft.w},${shapeDraft.y + shapeDraft.h / 2} ${shapeDraft.x + shapeDraft.w / 2},${shapeDraft.y + shapeDraft.h} ${shapeDraft.x},${shapeDraft.y + shapeDraft.h / 2}`}
                 fill="var(--overlay-tint)"
                 stroke="var(--selection)"
                 strokeWidth={1}
@@ -1465,8 +1474,13 @@ const connectorPath = (
 const rayBoxExit = (
   start: { x: number; y: number },
   dir: { x: number; y: number },
-  box: { x: number; y: number; w: number; h: number },
+  box: { x: number; y: number; w: number; h: number; shape?: string },
 ) => {
+  // Diamond: |dx|/(w/2) + |dy|/(h/2) = 1 along the ray from the centre.
+  if (box.shape === "diamond") {
+    const t = 1 / (Math.abs(dir.x) / (box.w / 2) + Math.abs(dir.y) / (box.h / 2) || Infinity);
+    return { x: start.x + dir.x * t, y: start.y + dir.y * t };
+  }
   const tx =
     dir.x > 0
       ? (box.x + box.w - start.x) / dir.x

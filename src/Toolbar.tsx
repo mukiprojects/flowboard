@@ -787,7 +787,8 @@ const SelectedConnectorOptions = ({
 
 // ---- Shape tool (rectangle / ellipse / sticky note) --------------------------
 
-const SHAPE_KINDS = ["rect", "ellipse", "note"] as const;
+const SHAPE_KINDS = ["rect", "ellipse", "diamond", "note"] as const;
+const SHAPE_LABELS = { rect: "Rectangle", ellipse: "Ellipse", diamond: "Diamond", note: "Sticky note" } as const;
 // Fill options. "transparent" = outline-only. The rest are soft tints that read
 // on either theme; the first color is the classic sticky-note yellow.
 const SHAPE_FILLS = [
@@ -897,8 +898,8 @@ const ShapeControls = ({
             if (k === "note" && value.fill === "transparent") patch.fill = NOTE_FILL;
             onChange(patch);
           }}
-          aria-label={k === "note" ? "Sticky note" : k === "rect" ? "Rectangle" : "Ellipse"}
-          title={k === "note" ? "Sticky note" : k === "rect" ? "Rectangle" : "Ellipse"}
+          aria-label={SHAPE_LABELS[k]}
+          title={SHAPE_LABELS[k]}
           style={{
             width: 30,
             height: 26,
@@ -1011,6 +1012,9 @@ const SelectedShapeOptions = ({
         p.fill = patch.fill;
         // Keep note text legible against the new fill.
         if (item.shape === "note") p.textColor = noteTextColor(patch.fill);
+        // Diamond: transparent fill falls back to the theme text color.
+        if (item.shape === "diamond")
+          p.textColor = patch.fill === "transparent" ? undefined : noteTextColor(patch.fill);
       }
       if (patch.stroke !== undefined) p.stroke = patch.stroke;
       if (patch.strokeWidth !== undefined) p.strokeWidth = patch.strokeWidth;
@@ -1020,10 +1024,17 @@ const SelectedShapeOptions = ({
 );
 
 // Kind glyphs for the shape picker.
-const ShapeKindGlyph = ({ kind }: { kind: "rect" | "ellipse" | "note" }) => (
+const ShapeKindGlyph = ({ kind }: { kind: (typeof SHAPE_KINDS)[number] }) => (
   <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
     {kind === "ellipse" ? (
       <ellipse cx="9" cy="9" rx="7" ry="5.5" stroke="currentColor" strokeWidth="1.5" />
+    ) : kind === "diamond" ? (
+      <path
+        d="M9 2.5 L15.5 9 L9 15.5 L2.5 9 Z"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeLinejoin="round"
+      />
     ) : kind === "note" ? (
       <path
         d="M3 3 H15 V11 L11 15 H3 Z M15 11 H11 V15"

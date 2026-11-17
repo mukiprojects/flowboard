@@ -93,7 +93,8 @@ export const ItemView = ({
 
   // Text items and sticky notes both hold editable text via the same edit flow.
   const isEditableText =
-    item.type === "text" || (item.type === "shape" && item.shape === "note");
+    item.type === "text" ||
+    (item.type === "shape" && (item.shape === "note" || item.shape === "diamond"));
 
   // When the store flags this item as the one to edit immediately (e.g. it
   // was just created via the text tool), drop into edit mode and clear the
@@ -634,6 +635,15 @@ const ShapeBody = ({
           strokeWidth={item.strokeWidth}
           vectorEffect="non-scaling-stroke"
         />
+      ) : item.shape === "diamond" ? (
+        <polygon
+          points={`${item.w / 2},${item.strokeWidth / 2} ${item.w - item.strokeWidth / 2},${item.h / 2} ${item.w / 2},${item.h - item.strokeWidth / 2} ${item.strokeWidth / 2},${item.h / 2}`}
+          fill={item.fill}
+          stroke={item.stroke}
+          strokeWidth={item.strokeWidth}
+          strokeLinejoin="round"
+          vectorEffect="non-scaling-stroke"
+        />
       ) : (
         <rect
           x={item.strokeWidth / 2}
@@ -650,13 +660,15 @@ const ShapeBody = ({
     </svg>
   );
 
-  if (item.shape !== "note") return geom;
+  if (item.shape !== "note" && item.shape !== "diamond") return geom;
 
-  // Sticky note: geometry + centered text overlay.
+  // Note / diamond: geometry + centered text overlay. A diamond insets the text
+  // (20% / 15%) so it stays inside the angled edges.
+  const isDiamond = item.shape === "diamond";
   const textStyle: React.CSSProperties = {
     position: "absolute",
     inset: 0,
-    padding: 12,
+    padding: isDiamond ? "15% 20%" : 12,
     boxSizing: "border-box",
     display: "flex",
     alignItems: "center",
@@ -664,7 +676,7 @@ const ShapeBody = ({
     textAlign: "center",
     fontSize: item.fontSize ?? 16,
     lineHeight: 1.3,
-    color: item.textColor ?? "#0a0a0a",
+    color: item.textColor ?? (isDiamond ? "var(--text)" : "#0a0a0a"),
     fontFamily: "inherit",
     overflow: "hidden",
     whiteSpace: "pre-wrap",
