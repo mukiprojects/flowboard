@@ -66,11 +66,23 @@ export async function buildSvg(board: Board, theme: Theme): Promise<string> {
       case "shape": {
         const sw = it.stroke === "transparent" ? 0 : it.strokeWidth || 0;
         const paint = `fill="${esc(it.fill)}" stroke="${esc(it.stroke)}" stroke-width="${sw}"`;
-        body.push(it.shape === "ellipse"
-          ? `<ellipse cx="${it.x + it.w / 2}" cy="${it.y + it.h / 2}" rx="${Math.max(0, it.w / 2 - sw / 2)}" ry="${Math.max(0, it.h / 2 - sw / 2)}" ${paint}/>`
-          : `<rect x="${it.x + sw / 2}" y="${it.y + sw / 2}" width="${Math.max(0, it.w - sw)}" height="${Math.max(0, it.h - sw)}" rx="${it.shape === "note" ? 6 : 0}" ${paint}/>`);
-        if (it.shape === "note" && it.text)
-          body.push(html(it, `padding:12px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:${it.fontSize || 16}px;line-height:1.3;color:${esc(it.textColor || "#0a0a0a")};white-space:pre-wrap;overflow-wrap:break-word`, esc(it.text)));
+        if (it.shape === "ellipse") {
+          body.push(`<ellipse cx="${it.x + it.w / 2}" cy="${it.y + it.h / 2}" rx="${Math.max(0, it.w / 2 - sw / 2)}" ry="${Math.max(0, it.h / 2 - sw / 2)}" ${paint}/>`);
+        } else if (it.shape === "diamond") {
+          const pts = `${it.x + it.w / 2},${it.y + sw / 2} ${it.x + it.w - sw / 2},${it.y + it.h / 2} ${it.x + it.w / 2},${it.y + it.h - sw / 2} ${it.x + sw / 2},${it.y + it.h / 2}`;
+          body.push(`<polygon points="${pts}" ${paint}/>`);
+          if (it.text) {
+            const padX = Math.max(8, Math.round(it.w * 0.2));
+            const padY = Math.max(6, Math.round(it.h * 0.15));
+            const textColor = it.textColor ?? (it.fill === "transparent" ? c.text : "#0a0a0a");
+            body.push(html(it, `padding:${padY}px ${padX}px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:${it.fontSize || 16}px;line-height:1.3;color:${esc(textColor)};white-space:pre-wrap;overflow-wrap:break-word`, esc(it.text)));
+          }
+        } else {
+          body.push(`<rect x="${it.x + sw / 2}" y="${it.y + sw / 2}" width="${Math.max(0, it.w - sw)}" height="${Math.max(0, it.h - sw)}" rx="${it.shape === "note" ? 6 : 0}" ${paint}/>`);
+          if (it.shape === "note" && it.text) {
+            body.push(html(it, `padding:12px;display:flex;align-items:center;justify-content:center;text-align:center;font-size:${it.fontSize || 16}px;line-height:1.3;color:${esc(it.textColor || "#0a0a0a")};white-space:pre-wrap;overflow-wrap:break-word`, esc(it.text)));
+          }
+        }
         break;
       }
       case "drawing":
@@ -98,12 +110,24 @@ export async function buildSvg(board: Board, theme: Theme): Promise<string> {
     const col = it.color ?? c.text2, ends = it.ends ?? "one";
     const m = marker(col);
     body.push(`<path d="${connectorPathD(it.shape ?? "straight", e1.x, e1.y, e2.x, e2.y)}" fill="none" stroke="${esc(col)}" stroke-width="${it.strokeWidth ?? 1.75}" stroke-linecap="round" stroke-linejoin="round"${ends !== "none" ? ` marker-end="url(#${m})"` : ""}${ends === "both" ? ` marker-start="url(#${m})"` : ""}/>`);
+    if (it.label) {
+      const mx = (e1.x + e2.x) / 2;
+      const my = (e1.y + e2.y) / 2;
+      const lbg = esc(it.labelBg || c.surface);
+      const lcol = esc(it.labelColor || c.text);
+      const approxW = Math.max(30, it.label.length * 7.5 + 18);
+      body.push(
+        `<g transform="translate(${mx}, ${my})">` +
+        `<rect x="${-approxW / 2}" y="-10" width="${approxW}" height="20" rx="10" fill="${lbg}" stroke="${c.border}" stroke-width="1"/>` +
+        `<text x="0" y="4" fill="${lcol}" font-family="${FONT}" font-size="12" text-anchor="middle">${esc(it.label)}</text>` +
+        `</g>`
+      );
+    }
   }
 
   const defs = [...markers].map(([col, id]) =>
     `<marker id="${id}" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" refX="12" refY="7" orient="auto-start-reverse"><path d="M 0 1 L 12 7 L 0 13 Z" fill="${esc(col)}"/></marker>`).join("");
 
-  // ponytail: no diamonds or connector labels, the board model has neither yet.
   return `<?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${vw}" height="${vh}" viewBox="${vx} ${vy} ${vw} ${vh}">
 <defs><style>${await fontFaceCss()}
