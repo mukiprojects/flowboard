@@ -524,6 +524,7 @@ const VIEWER_JS = `
     }
     return 'M '+x1+' '+y1+' L '+x2+' '+y2;
   }
+  var labels=[];
   (board.items||[]).forEach(function(it){
     if(it.type!=='connector') return;
     var a=byId[it.from], b=byId[it.to];
@@ -544,8 +545,18 @@ const VIEWER_JS = `
     if(ends==='both') p.setAttribute('marker-start','url(#cr-arrow)');
     p.setAttribute('style','color:'+(it.color||'var(--text-2)'));
     connectorSvg.appendChild(p);
+    if(it.label){
+      // Pill at the line midpoint (same for straight / elbow / curve B(0.5)).
+      // World-space div so it pans/zooms with the board. Queued and appended
+      // after the SVG so the opaque pill sits over the stroke.
+      var lb=document.createElement('div');
+      lb.textContent=it.label;
+      lb.style.cssText='position:absolute;left:'+((e1.x+e2.x)/2)+'px;top:'+((e1.y+e2.y)/2)+'px;transform:translate(-50%,-50%);padding:2px 9px;border-radius:999px;border:1px solid var(--border);box-shadow:0 1px 3px rgba(0,0,0,.12);font-size:12px;line-height:16px;white-space:pre;pointer-events:none;background:'+(it.labelBg||'var(--surface)')+';color:'+(it.labelColor||'var(--text)');
+      labels.push(lb);
+    }
   });
   world.appendChild(connectorSvg);
+  labels.forEach(function(l){ world.appendChild(l); });
 
   function applyView(){
     world.style.transform='translate('+view.x+'px,'+view.y+'px) scale('+view.zoom+')';

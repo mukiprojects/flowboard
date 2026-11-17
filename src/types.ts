@@ -153,6 +153,10 @@ export type ConnectorItem = Base & {
   shape?: "straight" | "curved" | "elbow";
   // Arrowheads: at the "to" end only (default), both ends, or none.
   ends?: "one" | "both" | "none";
+  // Optional text badge centered on the line's midpoint.
+  label?: string;
+  labelBg?: string; // badge fill; defaults to the theme surface
+  labelColor?: string; // badge text; defaults to the theme text
 };
 
 export type Item =

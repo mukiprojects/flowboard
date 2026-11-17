@@ -977,6 +977,8 @@ const ConnectorLayer = ({
   );
 
   const svgRef = useRef<SVGSVGElement>(null);
+  // Connector whose label is being edited inline.
+  const [editingLabel, setEditingLabel] = useState<string | null>(null);
   // Re-routing a connector by dragging one of its endpoint handles onto another
   // item. Only offered when a single connector is selected in the select tool.
   const [rerouting, setRerouting] = useState<{
@@ -1081,6 +1083,7 @@ const ConnectorLayer = ({
   };
 
   return (
+    <>
     <svg
       ref={svgRef}
       style={{
@@ -1181,6 +1184,10 @@ const ConnectorLayer = ({
                     : { type: "selectOnly", ids: [c.id] },
                 );
               }}
+              onDoubleClick={(e) => {
+                e.stopPropagation(); // don't also drop a new text note
+                setEditingLabel(c.id);
+              }}
             />
             <path
               d={d}
@@ -1276,8 +1283,146 @@ const ConnectorLayer = ({
         />
       )}
     </svg>
+
+    {/* Label badges, HTML so text sizing/editing is native. Sits above the
+        lines; the opaque pill masks the stroke behind it. */}
+    <div
+      style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
+    >
+      {connectors.map((c) => {
+        const editing = editingLabel === c.id;
+        if (!c.label && !editing) return null;
+        const a = byId.get(c.from);
+        const b = byId.get(c.to);
+        if (!a || !b) return null;
+        const { x1, y1, x2, y2 } = clippedScreen(a, b);
+        const m = connectorMidpoint(x1, y1, x2, y2);
+        const isSelected = selection.has(c.id);
+        return (
+          <div
+            key={c.id}
+            style={{
+              position: "absolute",
+              left: m.x,
+              top: m.y,
+              transform: "translate(-50%, -50%)",
+              opacity: rerouting?.id === c.id ? 0.4 : 1,
+            }}
+          >
+            {editing ? (
+              <ConnectorLabelEditor
+                initial={c.label ?? ""}
+                onDone={(text) => {
+                  setEditingLabel(null);
+                  if (text !== null && text !== (c.label ?? "")) {
+                    dispatch({ type: "commitHistory" });
+                    dispatch({
+                      type: "updateItem",
+                      id: c.id,
+                      patch: { label: text },
+                    });
+                  }
+                }}
+              />
+            ) : (
+              <div
+                onPointerDown={(e) => {
+                  e.stopPropagation();
+                  dispatch(
+                    e.shiftKey
+                      ? { type: "selectToggle", id: c.id }
+                      : { type: "selectOnly", ids: [c.id] },
+                  );
+                }}
+                onDoubleClick={(e) => {
+                  e.stopPropagation();
+                  if (tool === "select") setEditingLabel(c.id);
+                }}
+                style={{
+                  ...LABEL_PILL,
+                  background: c.labelBg ?? "var(--surface)",
+                  color: c.labelColor ?? "var(--text)",
+                  borderColor: isSelected ? "var(--selection)" : "var(--border-strong)",
+                  pointerEvents: tool === "select" && !rerouting ? "auto" : "none",
+                  cursor: "pointer",
+                }}
+              >
+                {c.label}
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+    </>
   );
 };
+
+const LABEL_PILL: React.CSSProperties = {
+  padding: "2px 9px",
+  borderRadius: 999,
+  border: "1px solid var(--border-strong)",
+  boxShadow: "0 1px 3px rgba(0,0,0,0.12)",
+  fontSize: 12,
+  lineHeight: "16px",
+  whiteSpace: "pre",
+  maxWidth: 240,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+};
+
+// Inline label input. Enter / click-outside commits, Escape cancels (null).
+const ConnectorLabelEditor = ({
+  initial,
+  onDone,
+}: {
+  initial: string;
+  onDone: (text: string | null) => void;
+}) => {
+  const done = useRef(false);
+  const finish = (text: string | null) => {
+    if (done.current) return; // Enter/Escape unmount also fires blur
+    done.current = true;
+    onDone(text);
+  };
+  return (
+    <input
+      autoFocus
+      defaultValue={initial}
+      size={Math.max(8, initial.length + 2)}
+      onFocus={(e) => e.currentTarget.select()}
+      onChange={(e) => (e.currentTarget.size = Math.max(8, e.currentTarget.value.length + 2))}
+      onPointerDown={(e) => e.stopPropagation()}
+      onDoubleClick={(e) => e.stopPropagation()}
+      onKeyDown={(e) => {
+        e.stopPropagation(); // keep Delete/shortcuts from hitting the board
+        if (e.key === "Enter") finish(e.currentTarget.value.trim());
+        else if (e.key === "Escape") finish(null);
+      }}
+      onBlur={(e) => finish(e.currentTarget.value.trim())}
+      style={{
+        ...LABEL_PILL,
+        pointerEvents: "auto",
+        background: "var(--surface)",
+        color: "var(--text)",
+        borderColor: "var(--selection)",
+        outline: "none",
+        textAlign: "center",
+        font: "inherit",
+        fontSize: 12,
+      }}
+    />
+  );
+};
+
+// Label anchor: the parametric midpoint of the routed line. For all three
+// shapes this is the endpoint average: straight trivially; elbow's connecting
+// segment is centered at ((x1+x2)/2, (y1+y2)/2); and the curve's controls are
+// symmetric, so B(0.5) = .125P0 + .375P1 + .375P2 + .125P3 reduces to the same.
+const connectorMidpoint = (x1: number, y1: number, x2: number, y2: number) => ({
+  x: (x1 + x2) / 2,
+  y: (y1 + y2) / 2,
+});
 
 // Build the SVG path "d" for a connector between two screen points, per shape:
 //   straight, a direct line

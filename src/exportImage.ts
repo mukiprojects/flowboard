@@ -745,6 +745,32 @@ function renderConnectorsLayer(
     };
     if (ends !== "none") head(x2, y2, endAngle);
     if (ends === "both") head(x1, y1, startAngle);
+
+    if (it.label) {
+      // Pill at the line midpoint (same for straight / elbow / curve B(0.5)).
+      const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+      const fz = 12 * scale, padX = 9 * scale, h = 20 * scale;
+      ctx.font = `400 ${fz}px ${FONT}`;
+      const w = ctx.measureText(it.label).width + padX * 2;
+      ctx.save();
+      ctx.shadowColor = "rgba(0,0,0,0.12)";
+      ctx.shadowBlur = 3 * scale;
+      ctx.shadowOffsetY = 1 * scale;
+      ctx.beginPath();
+      ctx.roundRect(mx - w / 2, my - h / 2, w, h, h / 2);
+      ctx.fillStyle = it.labelBg ?? colors.surface;
+      ctx.fill();
+      ctx.restore();
+      ctx.lineWidth = scale;
+      ctx.strokeStyle = colors.border;
+      ctx.stroke();
+      ctx.fillStyle = it.labelColor ?? colors.text;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(it.label, mx, my + scale * 0.5);
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
   }
 }
 

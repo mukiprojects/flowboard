@@ -557,10 +557,12 @@ const ConnectorControls = ({
   value,
   theme,
   onChange,
+  extra,
 }: {
   value: ConnectorStyle;
   theme: "light" | "dark";
   onChange: (patch: Partial<ConnectorStyle>) => void;
+  extra?: React.ReactNode;
 }) => {
   const palette = paletteFor(theme);
   return (
@@ -693,6 +695,7 @@ const ConnectorControls = ({
           </button>
         );
       })}
+      {extra}
     </div>
   );
 };
@@ -741,6 +744,44 @@ const SelectedConnectorOptions = ({
       if (patch.ends !== undefined) p.ends = patch.ends;
       dispatch({ type: "updateItem", id: item.id, patch: p });
     }}
+    extra={
+      <>
+        <div style={{ width: 1, height: 18, background: "var(--border)", margin: "0 2px" }} />
+        {/* Uncontrolled; keyed on the label so inline canvas edits resync it.
+            Enter / blur commits, empty clears the label. */}
+        <input
+          key={item.label ?? ""}
+          defaultValue={item.label ?? ""}
+          placeholder="Label"
+          aria-label="Arrow label"
+          spellCheck={false}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") e.currentTarget.blur();
+            else if (e.key === "Escape") {
+              e.currentTarget.value = item.label ?? "";
+              e.currentTarget.blur();
+            }
+          }}
+          onBlur={(e) => {
+            const label = e.currentTarget.value.trim();
+            if (label === (item.label ?? "")) return;
+            dispatch({ type: "commitHistory" });
+            dispatch({ type: "updateItem", id: item.id, patch: { label } });
+          }}
+          style={{
+            width: 110,
+            height: 26,
+            padding: "0 8px",
+            fontSize: 12,
+            color: "var(--text)",
+            background: "transparent",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-sm)",
+            outline: 0,
+          }}
+        />
+      </>
+    }
   />
 );
 
