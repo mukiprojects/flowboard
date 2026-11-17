@@ -56,5 +56,5 @@ export const fileToDataUrl = (file: File): Promise<string> =>
     r.readAsDataURL(file);
   });
 
-const sanitizeName = (s: string) =>
+export const sanitizeName = (s: string) =>
   s.replace(/[^\w\-. ]+/g, "_").trim() || "board";
