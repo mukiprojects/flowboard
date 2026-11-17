@@ -398,6 +398,13 @@ const MiniItem = ({ it, byId }: { it: Item; byId: Map<string, Item> }) => {
               stroke={stroke}
               strokeWidth={it.strokeWidth}
             />
+          ) : it.shape === "diamond" ? (
+            <polygon
+              points={`${it.x + it.w / 2},${it.y} ${it.x + it.w},${it.y + it.h / 2} ${it.x + it.w / 2},${it.y + it.h} ${it.x},${it.y + it.h / 2}`}
+              fill={fill}
+              stroke={stroke}
+              strokeWidth={it.strokeWidth}
+            />
           ) : (
             <rect
               x={it.x}
@@ -410,21 +417,21 @@ const MiniItem = ({ it, byId }: { it: Item; byId: Map<string, Item> }) => {
               strokeWidth={it.strokeWidth}
             />
           )}
-          {it.shape === "note" && it.text && (
+          {(it.shape === "note" || it.shape === "diamond") && it.text && (
             <foreignObject x={it.x} y={it.y} width={it.w} height={it.h}>
               <div
                 style={{
                   width: "100%",
                   height: "100%",
                   boxSizing: "border-box",
-                  padding: 12,
+                  padding: it.shape === "diamond" ? "15% 20%" : 12,
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
                   textAlign: "center",
                   fontSize: it.fontSize ?? 16,
                   lineHeight: 1.3,
-                  color: it.textColor ?? "#0a0a0a",
+                  color: it.textColor ?? (it.shape === "diamond" ? "var(--text)" : "#0a0a0a"),
                   overflow: "hidden",
                   whiteSpace: "pre-wrap",
                   wordBreak: "break-word",

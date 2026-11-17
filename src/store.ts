@@ -34,7 +34,7 @@ export type ConnectorStyle = {
 
 // Defaults the shape tool draws with: which primitive, and its fill/stroke.
 export type ShapeStyle = {
-  kind: "rect" | "ellipse" | "note";
+  kind: "rect" | "ellipse" | "note" | "diamond";
   fill: string;
   stroke: string;
   strokeWidth: number;

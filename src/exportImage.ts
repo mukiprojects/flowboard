@@ -61,8 +61,12 @@ function getBounds(items: Item[]) {
 function rayBoxExit(
   start: { x: number; y: number },
   dir:   { x: number; y: number },
-  box:   { x: number; y: number; w: number; h: number },
+  box:   { x: number; y: number; w: number; h: number; shape?: string },
 ) {
+  if (box.shape === "diamond") {
+    const t = 1 / (Math.abs(dir.x) / (box.w / 2) + Math.abs(dir.y) / (box.h / 2) || Infinity);
+    return { x: start.x + dir.x * t, y: start.y + dir.y * t };
+  }
   const tx = dir.x > 0 ? (box.x + box.w - start.x) / dir.x
            : dir.x < 0 ? (box.x           - start.x) / dir.x : Infinity;
   const ty = dir.y > 0 ? (box.y + box.h - start.y) / dir.y
@@ -309,7 +313,7 @@ function renderTextItem(
   ctx.restore();
 }
 
-// Rectangle / ellipse / sticky note. Rect + ellipse are a fill + optional
+// Rectangle / ellipse / diamond / sticky note. Rect + ellipse are a fill + optional
 // stroke; a note additionally centers its text (word-wrapped, clipped to the box).
 function renderShapeItem(
   ctx: CanvasRenderingContext2D,
@@ -317,6 +321,7 @@ function renderShapeItem(
   wx: (x: number) => number,
   wy: (y: number) => number,
   scale: number,
+  colors: Colors,
 ) {
   const x = wx(it.x), y = wy(it.y);
   const w = it.w * scale, h = it.h * scale;
@@ -332,6 +337,14 @@ function renderShapeItem(
       Math.max(0, w / 2 - sw / 2), Math.max(0, h / 2 - sw / 2),
       0, 0, Math.PI * 2,
     );
+  } else if (it.shape === "diamond") {
+    ctx.beginPath();
+    ctx.moveTo(x + w / 2, y + sw / 2);
+    ctx.lineTo(x + w - sw / 2, y + h / 2);
+    ctx.lineTo(x + w / 2, y + h - sw / 2);
+    ctx.lineTo(x + sw / 2, y + h / 2);
+    ctx.closePath();
+    ctx.lineJoin = "round";
   } else {
     const r = it.shape === "note" ? Math.min(6 * scale, w / 2, h / 2) : 0;
     ctx.beginPath();
@@ -345,20 +358,22 @@ function renderShapeItem(
   if (hasStroke) { ctx.strokeStyle = it.stroke; ctx.lineWidth = sw; ctx.stroke(); }
   ctx.restore();
 
-  if (it.shape !== "note" || !it.text) return;
+  if ((it.shape !== "note" && it.shape !== "diamond") || !it.text) return;
 
-  // Centered note text.
-  const pad = 12 * scale;
+  // Centered note / diamond text (diamond: 20% / 15% inset, like the board).
+  const isDiamond = it.shape === "diamond";
+  const padX = isDiamond ? w * 0.2 : 12 * scale;
+  const padY = isDiamond ? h * 0.15 : 0;
   const fz = (it.fontSize || 16) * scale;
   const lh = fz * 1.3;
-  const maxW = Math.max(0, w - pad * 2);
+  const maxW = Math.max(0, w - padX * 2);
 
   ctx.save();
   ctx.beginPath();
-  ctx.rect(x, y, w, h);
+  ctx.rect(x, y + padY, w, h - padY * 2);
   ctx.clip();
   ctx.font = `400 ${fz}px ${FONT}`;
-  ctx.fillStyle = it.textColor || "#0a0a0a";
+  ctx.fillStyle = it.textColor || (isDiamond ? colors.text : "#0a0a0a");
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
 
@@ -840,7 +855,7 @@ export async function downloadImage(board: Board, theme: Theme = "light") {
     } else if (it.type === "drawing") {
       renderDrawingItem(ctx, it, wx, wy, scale);
     } else if (it.type === "shape") {
-      renderShapeItem(ctx, it, wx, wy, scale);
+      renderShapeItem(ctx, it, wx, wy, scale, colors);
     } else if (it.type === "link") {
       renderLinkItem(ctx, it, wx, wy, scale, colors);
     } else if (it.type === "embed") {

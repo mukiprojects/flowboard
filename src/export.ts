@@ -459,6 +459,10 @@ const VIEWER_JS = `
         shp=document.createElementNS(sns,'ellipse');
         shp.setAttribute('cx',it.w/2); shp.setAttribute('cy',it.h/2);
         shp.setAttribute('rx',Math.max(0,it.w/2-sw/2)); shp.setAttribute('ry',Math.max(0,it.h/2-sw/2));
+      } else if(it.shape==='diamond'){
+        shp=document.createElementNS(sns,'polygon');
+        shp.setAttribute('points',(it.w/2)+','+(sw/2)+' '+(it.w-sw/2)+','+(it.h/2)+' '+(it.w/2)+','+(it.h-sw/2)+' '+(sw/2)+','+(it.h/2));
+        shp.setAttribute('stroke-linejoin','round');
       } else {
         shp=document.createElementNS(sns,'rect');
         shp.setAttribute('x',sw/2); shp.setAttribute('y',sw/2);
@@ -470,12 +474,12 @@ const VIEWER_JS = `
       ssvg.appendChild(shp);
       el.appendChild(ssvg);
       el.style.overflow='hidden';
-      if(it.shape==='note' && it.text){
+      if((it.shape==='note'||it.shape==='diamond') && it.text){
         var ntext=document.createElement('div');
         ntext.textContent=it.text;
-        ntext.style.cssText='position:absolute;inset:0;padding:12px;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3;white-space:pre-wrap;word-break:break-word;overflow:hidden';
+        ntext.style.cssText='position:absolute;inset:0;padding:'+(it.shape==='diamond'?'15% 20%':'12px')+';display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.3;white-space:pre-wrap;word-break:break-word;overflow:hidden';
         ntext.style.fontSize=(it.fontSize||16)+'px';
-        ntext.style.color=it.textColor||'#0a0a0a';
+        ntext.style.color=it.textColor||(it.shape==='diamond'?'var(--text)':'#0a0a0a');
         el.appendChild(ntext);
       }
     } else if(it.type==='connector'){
@@ -505,6 +509,10 @@ const VIEWER_JS = `
   var byId={};
   (board.items||[]).forEach(function(it){ byId[it.id]=it; });
   function rayBoxExit(start,dir,box){
+    if(box.shape==='diamond'){
+      var td=1/(Math.abs(dir.x)/(box.w/2)+Math.abs(dir.y)/(box.h/2)||Infinity);
+      return {x:start.x+dir.x*td,y:start.y+dir.y*td};
+    }
     var tx=dir.x>0?(box.x+box.w-start.x)/dir.x:dir.x<0?(box.x-start.x)/dir.x:Infinity;
     var ty=dir.y>0?(box.y+box.h-start.y)/dir.y:dir.y<0?(box.y-start.y)/dir.y:Infinity;
     var t=Math.max(0,Math.min(tx,ty));
