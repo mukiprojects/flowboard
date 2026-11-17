@@ -123,7 +123,7 @@ export const Toolbar = ({
             padding: 0,
           }}
         >
-          crboard
+          flowboard
         </button>
         <div style={{ width: 1, height: 18, background: "var(--border)" }} />
         <input
@@ -186,7 +186,7 @@ export const Toolbar = ({
                   setMenuOpen(false);
                 }}
               >
-                Open .crboard…
+                Open .flowboard…
               </MenuItem>
               <MenuItem
                 onClick={() => {
@@ -194,7 +194,7 @@ export const Toolbar = ({
                   setMenuOpen(false);
                 }}
               >
-                Save as .crboard
+                Save as .flowboard
               </MenuItem>
               <Sep />
               <MenuItem

@@ -429,7 +429,7 @@ export const ItemView = ({
           ? { transform: `scale(${textScale.s})`, transformOrigin: textScale.origin }
           : null),
       }}
-      className={`crboard-item cr-item-in${selected ? " selection-ring" : ""}`}
+      className={`flowboard-item crboard-item cr-item-in${selected ? " selection-ring" : ""}`}
     >
       <ItemBody
         item={item}

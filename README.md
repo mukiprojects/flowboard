@@ -33,7 +33,7 @@ No account, no sign up, and nothing leaves your browser.
   - **Export as PDF**: Print-ready vector PDF document.
   - **Export as PNG**: 300 DPI high-resolution bitmap.
   - **Export shareable HTML**: Self-contained single-file bundle with an embedded micro-viewer that opens in any browser.
-  - **Save as .crboard**: Lightweight JSON files to save and reload anytime.
+  - **Save as .flowboard**: Lightweight JSON files to save and reload anytime (backward-compatible with legacy .crboard files).
 
 ---
 

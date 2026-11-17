@@ -1,6 +1,6 @@
-// Save / open .crboard JSON files.
+// Save / open .flowboard JSON files.
 //
-// .crboard is just a JSON file with a tiny version header. We use the browser's
+// .flowboard is just a JSON file with a tiny version header. We use the browser's
 // download trick (a temporary <a> element) to save and an <input type="file">
 // to open, no server, no library.
 
@@ -12,7 +12,7 @@ export const saveBoardFile = (board: Board) => {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `${sanitizeName(board.name)}.crboard`;
+  a.download = `${sanitizeName(board.name)}.flowboard`;
   a.click();
   // Give the browser a tick to start the download before revoking the URL.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -22,7 +22,7 @@ export const openBoardFile = (): Promise<Board | null> =>
   new Promise((resolve) => {
     const input = document.createElement("input");
     input.type = "file";
-    input.accept = ".crboard,application/json";
+    input.accept = ".flowboard,.crboard,application/json";
     input.onchange = async () => {
       const file = input.files?.[0];
       if (!file) {
@@ -35,7 +35,7 @@ export const openBoardFile = (): Promise<Board | null> =>
         if (board && typeof board === "object" && board.version === 1) {
           resolve(board as Board);
         } else {
-          alert("That doesn't look like a crboard file.");
+          alert("That doesn't look like a flowboard file.");
           resolve(null);
         }
       } catch {

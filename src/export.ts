@@ -57,7 +57,7 @@ export const exportToHtml = async (
   board: Board,
   theme: Theme = "light",
 ): Promise<string> => {
-  const title = escapeHtml(board.name || "crboard");
+  const title = escapeHtml(board.name || "flowboard");
   const data = safeJson(board);
   const fonts = await fontFaceCss();
 
@@ -535,11 +535,28 @@ const VIEWER_JS = `
   var labels=[];
   (board.items||[]).forEach(function(it){
     if(it.type!=='connector') return;
-    var a=byId[it.from], b=byId[it.to];
-    if(!a||!b) return;
-    var fc={x:a.x+a.w/2,y:a.y+a.h/2}, tc={x:b.x+b.w/2,y:b.y+b.h/2};
-    var e1=rayBoxExit(fc,{x:tc.x-fc.x,y:tc.y-fc.y},a);
-    var e2=rayBoxExit(tc,{x:fc.x-tc.x,y:fc.y-tc.y},b);
+    var a=it.from?byId[it.from]:undefined, b=it.to?byId[it.to]:undefined;
+    if(!a&&!it.startPoint) return;
+    if(!b&&!it.endPoint) return;
+    var e1, e2;
+    if(a&&b){
+      var fc={x:a.x+a.w/2,y:a.y+a.h/2}, tc={x:b.x+b.w/2,y:b.y+b.h/2};
+      e1=rayBoxExit(fc,{x:tc.x-fc.x,y:tc.y-fc.y},a);
+      e2=rayBoxExit(tc,{x:fc.x-tc.x,y:fc.y-tc.y},b);
+    } else if(a&&(b||it.endPoint)){
+      var tc=b?{x:b.x+b.w/2,y:b.y+b.h/2}:it.endPoint;
+      var fc={x:a.x+a.w/2,y:a.y+a.h/2};
+      e1=rayBoxExit(fc,{x:tc.x-fc.x,y:tc.y-fc.y},a);
+      e2=tc;
+    } else if((a||it.startPoint)&&b){
+      var fc=a?{x:a.x+a.w/2,y:a.y+a.h/2}:it.startPoint;
+      var tc={x:b.x+b.w/2,y:b.y+b.h/2};
+      e1=fc;
+      e2=rayBoxExit(tc,{x:fc.x-tc.x,y:fc.y-tc.y},b);
+    } else {
+      e1=it.startPoint||{x:it.x,y:it.y};
+      e2=it.endPoint||{x:it.x+it.w,y:it.y+it.h};
+    }
     var ends=it.ends||'one';
     var p=document.createElementNS(ns2,'path');
     p.setAttribute('d',connectorPath(it.shape||'straight',e1.x,e1.y,e2.x,e2.y));

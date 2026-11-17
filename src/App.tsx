@@ -40,10 +40,11 @@ import {
 import { clampZoom } from "./coords";
 import type { Board, Item, ItemDraft } from "./types";
 
-// Magic number used to identify clipboard payloads written by crboard, so a
-// crboard paste isn't confused with arbitrary JSON the user might copy from
+// Magic number used to identify clipboard payloads written by flowboard, so a
+// flowboard paste isn't confused with arbitrary JSON the user might copy from
 // elsewhere.
-const CR_CLIPBOARD_TAG = "crboard/v1";
+const CLIPBOARD_TAG = "flowboard/v1";
+const LEGACY_CLIPBOARD_TAG = "crboard/v1";
 
 // Auto-backup runs every BACKUP_INTERVAL milliseconds while a folder is set up.
 const BACKUP_INTERVAL = 10 * 60 * 1000; // 10 minutes
@@ -112,7 +113,7 @@ const App = ({
       } catch (err) {
         // File handle may have lost permission (folder moved, browser
         // restarted, etc.). Drop it so the user re-enables it from the menu.
-        console.warn("crboard auto-backup failed:", err);
+        console.warn("flowboard auto-backup failed:", err);
       }
     };
     void run();
@@ -229,7 +230,7 @@ const App = ({
       );
       e.clipboardData?.setData(
         "text/plain",
-        JSON.stringify({ tag: CR_CLIPBOARD_TAG, items }),
+        JSON.stringify({ tag: CLIPBOARD_TAG, items }),
       );
       e.preventDefault();
     };
@@ -242,7 +243,7 @@ const App = ({
       );
       e.clipboardData?.setData(
         "text/plain",
-        JSON.stringify({ tag: CR_CLIPBOARD_TAG, items }),
+        JSON.stringify({ tag: CLIPBOARD_TAG, items }),
       );
       e.preventDefault();
       dispatch({ type: "removeItems", ids: [...state.selection] });
@@ -267,7 +268,7 @@ const App = ({
       const cd = e.clipboardData;
       if (!cd) return;
 
-      // 0. crboard items? Detect the tagged JSON payload and add copies
+      // 0. flowboard items? Detect the tagged JSON payload and add copies
       //    centered on the current viewport. Stripped of id/z so the reducer
       //    assigns fresh ones.
       const text0 = cd.getData("text/plain");
@@ -276,7 +277,7 @@ const App = ({
           const parsed = JSON.parse(text0);
           if (
             parsed &&
-            parsed.tag === CR_CLIPBOARD_TAG &&
+            (parsed.tag === CLIPBOARD_TAG || parsed.tag === LEGACY_CLIPBOARD_TAG) &&
             Array.isArray(parsed.items) &&
             parsed.items.length > 0
           ) {
@@ -967,7 +968,7 @@ const BoardViewer = ({ board, theme }: SharePayload) => {
             color: text,
           }}
         >
-          crboard
+          flowboard
         </span>
         <div style={{ width: 1, height: 18, background: border }} />
         <span style={{ fontSize: 13, fontWeight: 500, color: text }}>

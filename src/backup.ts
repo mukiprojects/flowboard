@@ -2,7 +2,7 @@
 //
 // Why not just download a file every 10 min? Each download would pop the
 // browser's "save file" dialog and dump into ~/Downloads with names like
-// "crboard-autobackup (3).crboard", the opposite of what the user asked for.
+// "flowboard-autobackup (3).flowboard", the opposite of what the user asked for.
 // Instead, we ask once via showDirectoryPicker(), keep the resulting handle
 // in IndexedDB so we can resume across reloads, and write straight into the
 // folder. Same filename every time → previous backup gets overwritten.
@@ -13,7 +13,7 @@
 
 import type { Board } from "./types";
 
-const DB_NAME = "crboard-meta";
+const DB_NAME = "flowboard-meta";
 const STORE = "kv";
 const HANDLE_KEY = "backupDir";
 
@@ -99,7 +99,7 @@ export const pickBackupDir =
     try {
       const handle = await w.showDirectoryPicker({
         mode: "readwrite",
-        id: "crboard-backup",
+        id: "flowboard-backup",
         startIn: "documents",
       });
       await idbSet(HANDLE_KEY, handle);
@@ -149,7 +149,7 @@ export const clearBackupDir = async (): Promise<void> => {
 // Write the current board to a single fixed filename. createWritable() →
 // write() → close() truncates the existing file, so each backup replaces the
 // previous one, exactly the "delete the old one" behavior the user asked for.
-const FILENAME = "crboard-autobackup.crboard";
+const FILENAME = "flowboard-autobackup.flowboard";
 
 export const writeBackup = async (
   handle: FileSystemDirectoryHandle,

@@ -102,11 +102,33 @@ export async function buildSvg(board: Board, theme: Theme): Promise<string> {
   // Connectors on top, like the canvas.
   for (const it of items) {
     if (it.type !== "connector") continue;
-    const a = byId.get(it.from), t = byId.get(it.to);
-    if (!a || !t) continue;
-    const fc = { x: a.x + a.w / 2, y: a.y + a.h / 2 }, tc = { x: t.x + t.w / 2, y: t.y + t.h / 2 };
-    const e1 = rayBoxExit(fc, { x: tc.x - fc.x, y: tc.y - fc.y }, a);
-    const e2 = rayBoxExit(tc, { x: fc.x - tc.x, y: fc.y - tc.y }, t);
+    const a = it.from ? byId.get(it.from) : undefined;
+    const t = it.to ? byId.get(it.to) : undefined;
+    if (!a && !it.startPoint) continue;
+    if (!t && !it.endPoint) continue;
+
+    let e1: { x: number; y: number };
+    let e2: { x: number; y: number };
+
+    if (a && t) {
+      const fc = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+      const tc = { x: t.x + t.w / 2, y: t.y + t.h / 2 };
+      e1 = rayBoxExit(fc, { x: tc.x - fc.x, y: tc.y - fc.y }, a);
+      e2 = rayBoxExit(tc, { x: fc.x - tc.x, y: fc.y - tc.y }, t);
+    } else if (a && (t || it.endPoint)) {
+      const tc = t ? { x: t.x + t.w / 2, y: t.y + t.h / 2 } : it.endPoint!;
+      const fc = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+      e1 = rayBoxExit(fc, { x: tc.x - fc.x, y: tc.y - fc.y }, a);
+      e2 = tc;
+    } else if ((a || it.startPoint) && t) {
+      const fc = a ? { x: a.x + a.w / 2, y: a.y + a.h / 2 } : it.startPoint!;
+      const tc = { x: t.x + t.w / 2, y: t.y + t.h / 2 };
+      e1 = fc;
+      e2 = rayBoxExit(tc, { x: fc.x - tc.x, y: fc.y - tc.y }, t);
+    } else {
+      e1 = it.startPoint ?? { x: it.x, y: it.y };
+      e2 = it.endPoint ?? { x: it.x + it.w, y: it.y + it.h };
+    }
     const col = it.color ?? c.text2, ends = it.ends ?? "one";
     const m = marker(col);
     body.push(`<path d="${connectorPathD(it.shape ?? "straight", e1.x, e1.y, e2.x, e2.y)}" fill="none" stroke="${esc(col)}" stroke-width="${it.strokeWidth ?? 1.75}" stroke-linecap="round" stroke-linejoin="round"${ends !== "none" ? ` marker-end="url(#${m})"` : ""}${ends === "both" ? ` marker-start="url(#${m})"` : ""}/>`);

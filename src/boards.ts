@@ -52,15 +52,18 @@ export function computeThumb(board: Board): BoardThumb {
   return { r, w: W / S, h: H / S };
 }
 
-const INDEX_KEY = "crboard:boards";
-const LEGACY_KEY = "crboard:current";
-export const boardDataKey = (id: string) => `crboard:board:${id}`;
+const INDEX_KEY = "flowboard:boards";
+const LEGACY_INDEX_KEY = "crboard:boards";
+const LEGACY_KEY = "flowboard:current";
+const OLD_LEGACY_KEY = "crboard:current";
+export const boardDataKey = (id: string) => `flowboard:board:${id}`;
+export const legacyBoardDataKey = (id: string) => `crboard:board:${id}`;
 
 // ── Read ──────────────────────────────────────────────────────────────────────
 
 export function listBoards(): BoardMeta[] {
   try {
-    const raw = localStorage.getItem(INDEX_KEY);
+    const raw = localStorage.getItem(INDEX_KEY) || localStorage.getItem(LEGACY_INDEX_KEY);
     if (raw) return JSON.parse(raw) as BoardMeta[];
   } catch { /* ignore */ }
   return [];
@@ -92,7 +95,7 @@ export function backfillThumbs(): BoardMeta[] {
 
 export function loadBoardById(id: string): Board | null {
   try {
-    const raw = localStorage.getItem(boardDataKey(id));
+    const raw = localStorage.getItem(boardDataKey(id)) || localStorage.getItem(legacyBoardDataKey(id));
     if (raw) {
       const b = JSON.parse(raw) as Board;
       if (b?.version === 1) return b;
@@ -147,16 +150,32 @@ export function createNewBoard(): { id: string; board: Board } {
 
 // ── Migration ─────────────────────────────────────────────────────────────────
 
-// Call once on app start. Moves the legacy single-board entry into the new
-// multi-board format so existing users keep their work.
+// Call once on app start. Moves the legacy single-board entry or older crboard
+// multi-board entries into the new flowboard format so existing users keep their work.
 export function migrateLegacyBoard(): void {
   try {
+    // If no flowboard index exists yet but a crboard index does, copy index and boards over
+    if (!localStorage.getItem(INDEX_KEY) && localStorage.getItem(LEGACY_INDEX_KEY)) {
+      const rawLegacy = localStorage.getItem(LEGACY_INDEX_KEY);
+      if (rawLegacy) {
+        localStorage.setItem(INDEX_KEY, rawLegacy);
+        const list = JSON.parse(rawLegacy) as BoardMeta[];
+        for (const meta of list) {
+          const oldData = localStorage.getItem(legacyBoardDataKey(meta.id));
+          if (oldData && !localStorage.getItem(boardDataKey(meta.id))) {
+            localStorage.setItem(boardDataKey(meta.id), oldData);
+          }
+        }
+      }
+    }
+
     if (localStorage.getItem(INDEX_KEY)) return; // already migrated
-    const raw = localStorage.getItem(LEGACY_KEY);
+    const raw = localStorage.getItem(LEGACY_KEY) || localStorage.getItem(OLD_LEGACY_KEY);
     if (!raw) return;
     const board = JSON.parse(raw) as Board;
     if (!board?.version) return;
     saveBoardById(nanoid(8), board);
     localStorage.removeItem(LEGACY_KEY);
+    localStorage.removeItem(OLD_LEGACY_KEY);
   } catch { /* ignore */ }
 }

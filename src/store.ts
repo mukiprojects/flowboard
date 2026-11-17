@@ -15,7 +15,8 @@ import type { Board, Item, ItemDraft, Theme, Tool, View } from "./types";
 import { emptyBoard } from "./types";
 import { saveBoardById } from "./boards";
 
-const THEME_KEY = "crboard:theme";
+const THEME_KEY = "flowboard:theme";
+const LEGACY_THEME_KEY = "crboard:theme";
 const HISTORY_CAP = 100;
 
 export type PenStyle = {
@@ -139,28 +140,71 @@ const topZ = (items: Item[]) =>
 const touch = (board: Board): Board => ({ ...board, updatedAt: Date.now() });
 
 // Connector geometry tracks endpoint positions. After any change to items, we
-// recompute each connector's bbox to enclose its endpoints' centres, and drop
-// connectors whose `from` or `to` items no longer exist.
+// recompute each connector's bbox to enclose its endpoints' centres. If a connected
+// item was deleted, we convert that endpoint into a static world coordinate so the
+// arrow survives on the canvas and can point at anything.
 const reconcileConnectors = (items: Item[]): Item[] => {
   const byId = new Map(items.map((it) => [it.id, it]));
-  const live = items.filter((it) => {
-    if (it.type !== "connector") return true;
-    return (
-      byId.has(it.from) && byId.has(it.to) && it.from !== it.to
-    );
+
+  const preserved = items.map((it) => {
+    if (it.type !== "connector") return it;
+    let next = it;
+    if (next.from && !byId.has(next.from)) {
+      next = {
+        ...next,
+        from: undefined,
+        startPoint: next.startPoint ?? { x: next.x, y: next.y },
+      };
+    }
+    if (next.to && !byId.has(next.to)) {
+      next = {
+        ...next,
+        to: undefined,
+        endPoint: next.endPoint ?? { x: next.x + next.w, y: next.y + next.h },
+      };
+    }
+    return next;
   });
+
+  const live = preserved.filter((it) => {
+    if (it.type !== "connector") return true;
+    const hasFrom = (it.from && byId.has(it.from)) || it.startPoint != null;
+    const hasTo = (it.to && byId.has(it.to)) || it.endPoint != null;
+    if (!hasFrom || !hasTo) return false;
+    if (it.from && it.to && it.from === it.to && !it.startPoint && !it.endPoint) {
+      return false;
+    }
+    return true;
+  });
+
   return live.map((it) => {
     if (it.type !== "connector") return it;
-    const a = byId.get(it.from)!;
-    const b = byId.get(it.to)!;
-    const fc = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
-    const tc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+    let fc: { x: number; y: number };
+    if (it.from && byId.has(it.from)) {
+      const a = byId.get(it.from)!;
+      fc = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+    } else if (it.startPoint) {
+      fc = it.startPoint;
+    } else {
+      fc = { x: it.x, y: it.y };
+    }
+
+    let tc: { x: number; y: number };
+    if (it.to && byId.has(it.to)) {
+      const b = byId.get(it.to)!;
+      tc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+    } else if (it.endPoint) {
+      tc = it.endPoint;
+    } else {
+      tc = { x: it.x + it.w, y: it.y + it.h };
+    }
+
     return {
       ...it,
       x: Math.min(fc.x, tc.x),
       y: Math.min(fc.y, tc.y),
-      w: Math.abs(tc.x - fc.x),
-      h: Math.abs(tc.y - fc.y),
+      w: Math.max(1, Math.abs(tc.x - fc.x)),
+      h: Math.max(1, Math.abs(tc.y - fc.y)),
     };
   });
 };
@@ -219,7 +263,23 @@ const apply = (state: State, action: Action): State => {
           ...state.board,
           items: state.board.items.map((it) => {
             const p = map.get(it.id);
-            return p ? { ...it, x: p.x, y: p.y } : it;
+            if (!p) return it;
+            if (it.type === "connector") {
+              const dx = p.x - it.x;
+              const dy = p.y - it.y;
+              return {
+                ...it,
+                x: p.x,
+                y: p.y,
+                startPoint: it.startPoint
+                  ? { x: it.startPoint.x + dx, y: it.startPoint.y + dy }
+                  : undefined,
+                endPoint: it.endPoint
+                  ? { x: it.endPoint.x + dx, y: it.endPoint.y + dy }
+                  : undefined,
+              };
+            }
+            return { ...it, x: p.x, y: p.y };
           }),
         }),
       };
@@ -262,13 +322,29 @@ const apply = (state: State, action: Action): State => {
       for (const it of state.board.items) {
         if (!ids.has(it.id)) continue;
         z += 1;
-        clones.push({
-          ...it,
-          id: nanoid(8),
-          x: it.x + off.x,
-          y: it.y + off.y,
-          z,
-        } as Item);
+        if (it.type === "connector") {
+          clones.push({
+            ...it,
+            id: nanoid(8),
+            x: it.x + off.x,
+            y: it.y + off.y,
+            startPoint: it.startPoint
+              ? { x: it.startPoint.x + off.x, y: it.startPoint.y + off.y }
+              : undefined,
+            endPoint: it.endPoint
+              ? { x: it.endPoint.x + off.x, y: it.endPoint.y + off.y }
+              : undefined,
+            z,
+          } as Item);
+        } else {
+          clones.push({
+            ...it,
+            id: nanoid(8),
+            x: it.x + off.x,
+            y: it.y + off.y,
+            z,
+          } as Item);
+        }
       }
       if (!clones.length) return state;
       return {
@@ -286,9 +362,23 @@ const apply = (state: State, action: Action): State => {
         ...state,
         board: touch({
           ...state.board,
-          items: state.board.items.map((it) =>
-            ids.has(it.id) ? { ...it, x: it.x + action.dx, y: it.y + action.dy } : it,
-          ),
+          items: state.board.items.map((it) => {
+            if (!ids.has(it.id)) return it;
+            if (it.type === "connector") {
+              return {
+                ...it,
+                x: it.x + action.dx,
+                y: it.y + action.dy,
+                startPoint: it.startPoint
+                  ? { x: it.startPoint.x + action.dx, y: it.startPoint.y + action.dy }
+                  : undefined,
+                endPoint: it.endPoint
+                  ? { x: it.endPoint.x + action.dx, y: it.endPoint.y + action.dy }
+                  : undefined,
+              };
+            }
+            return { ...it, x: it.x + action.dx, y: it.y + action.dy };
+          }),
         }),
       };
     }
@@ -456,7 +546,7 @@ const reducer = (state: State, action: Action): State => {
 
 const loadTheme = (): Theme => {
   try {
-    const raw = localStorage.getItem(THEME_KEY);
+    const raw = localStorage.getItem(THEME_KEY) || localStorage.getItem(LEGACY_THEME_KEY);
     if (raw === "dark" || raw === "light") return raw;
   } catch {
     // ignore
@@ -487,7 +577,7 @@ const loadInitial = (): State => {
     theme,
   };
   try {
-    const raw = localStorage.getItem("crboard:current");
+    const raw = localStorage.getItem("flowboard:current") || localStorage.getItem("crboard:current");
     if (raw) {
       const board = JSON.parse(raw) as Board;
       if (board && board.version === 1) {
@@ -556,7 +646,7 @@ export const useStore = (boardId?: string, initialBoard?: Board) => {
         if (boardId) {
           saveBoardById(boardId, state.board);
         } else {
-          localStorage.setItem("crboard:current", JSON.stringify(state.board));
+          localStorage.setItem("flowboard:current", JSON.stringify(state.board));
         }
         setSaveStatus({ savedAt: Date.now(), pending: false, failed: false });
       } catch {

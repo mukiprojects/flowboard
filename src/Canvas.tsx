@@ -9,7 +9,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Action, State } from "./store";
 import { noteTextColor } from "./store";
-import type { Item, ItemDraft, Stroke } from "./types";
+import type { ConnectorItem, Item, ItemDraft, Stroke } from "./types";
 import { ItemView } from "./Item";
 import { clampZoom, fitToBounds, screenToWorld, zoomAt } from "./coords";
 import { animateView, cancelViewAnim } from "./viewAnim";
@@ -58,9 +58,10 @@ export const Canvas = ({ state, dispatch }: Props) => {
     y: number;
     itemId: string;
   } | null>(null);
-  // Connector tool drag-in-progress.
+  // Connector tool drag-in-progress (attached to source item or free canvas point).
   const [connectorDrag, setConnectorDrag] = useState<{
-    sourceId: string;
+    sourceId?: string;
+    startPoint?: { x: number; y: number };
     cursorScreen: { x: number; y: number };
     hoverTargetId: string | null;
   } | null>(null);
@@ -365,18 +366,23 @@ export const Canvas = ({ state, dispatch }: Props) => {
 
     const world = screenToWorld(screen, board.view);
 
-    // Connector tool: pointerdown on an item starts a connector drag.
+    // Connector tool: pointerdown on an item starts a connector drag,
+    // or pointerdown on empty canvas starts a free/standalone connector arrow.
     if (tool === "connector") {
       const el = e.target as HTMLElement;
       const sourceEl = el?.closest?.("[data-item-id]") as HTMLElement | null;
-      const sourceId = sourceEl?.getAttribute("data-item-id");
-      if (!sourceId) return; // empty-canvas click in connector mode = noop
+      const sourceId = sourceEl?.getAttribute("data-item-id") ?? undefined;
+      const startPoint = !sourceId ? world : undefined;
+      const startScreen = { x: screen.x, y: screen.y };
+
       e.preventDefault();
       setConnectorDrag({
         sourceId,
+        startPoint,
         cursorScreen: { x: screen.x, y: screen.y },
         hoverTargetId: null,
       });
+
       const onMove = (ev: PointerEvent) => {
         const r = containerRef.current!.getBoundingClientRect();
         const cs = { x: ev.clientX - r.left, y: ev.clientY - r.top };
@@ -386,38 +392,128 @@ export const Canvas = ({ state, dispatch }: Props) => {
         const overId = overEl?.getAttribute("data-item-id") ?? null;
         setConnectorDrag({
           sourceId,
+          startPoint,
           cursorScreen: cs,
           hoverTargetId: overId && overId !== sourceId ? overId : null,
         });
       };
+
       const onUp = (ev: PointerEvent) => {
         window.removeEventListener("pointermove", onMove);
         window.removeEventListener("pointerup", onUp);
+        const r = containerRef.current!.getBoundingClientRect();
+        const endScreen = { x: ev.clientX - r.left, y: ev.clientY - r.top };
+        const endWorld = screenToWorld(endScreen, board.view);
+
         const overEl = document
           .elementFromPoint(ev.clientX, ev.clientY)
           ?.closest?.("[data-item-id]") as HTMLElement | null;
-        const targetId = overEl?.getAttribute("data-item-id");
+        const targetId = overEl?.getAttribute("data-item-id") ?? undefined;
         setConnectorDrag(null);
-        if (targetId && targetId !== sourceId) {
-          // Reducer will compute the real bbox via reconcileConnectors.
-          dispatch({
-            type: "addItem",
-            item: {
-              type: "connector",
-              from: sourceId,
-              to: targetId,
-              color: state.connector.color,
-              strokeWidth: state.connector.width,
-              shape: state.connector.shape,
-              ends: state.connector.ends,
-              x: 0,
-              y: 0,
-              w: 0,
-              h: 0,
-            },
-          });
+
+        const distScreen = Math.hypot(
+          endScreen.x - startScreen.x,
+          endScreen.y - startScreen.y,
+        );
+
+        if (sourceId) {
+          if (targetId && targetId !== sourceId) {
+            // Item to item
+            dispatch({
+              type: "addItem",
+              item: {
+                type: "connector",
+                from: sourceId,
+                to: targetId,
+                color: state.connector.color,
+                strokeWidth: state.connector.width,
+                shape: state.connector.shape,
+                ends: state.connector.ends,
+                x: 0,
+                y: 0,
+                w: 0,
+                h: 0,
+              },
+            });
+          } else if (distScreen >= 12) {
+            // Item to empty canvas point
+            dispatch({
+              type: "addItem",
+              item: {
+                type: "connector",
+                from: sourceId,
+                endPoint: endWorld,
+                color: state.connector.color,
+                strokeWidth: state.connector.width,
+                shape: state.connector.shape,
+                ends: state.connector.ends,
+                x: 0,
+                y: 0,
+                w: 0,
+                h: 0,
+              },
+            });
+          }
+        } else {
+          // Started on empty canvas
+          if (targetId) {
+            // Empty canvas to item
+            dispatch({
+              type: "addItem",
+              item: {
+                type: "connector",
+                startPoint: world,
+                to: targetId,
+                color: state.connector.color,
+                strokeWidth: state.connector.width,
+                shape: state.connector.shape,
+                ends: state.connector.ends,
+                x: 0,
+                y: 0,
+                w: 0,
+                h: 0,
+              },
+            });
+          } else if (distScreen >= 12) {
+            // Free arrow from startPoint to endPoint
+            dispatch({
+              type: "addItem",
+              item: {
+                type: "connector",
+                startPoint: world,
+                endPoint: endWorld,
+                color: state.connector.color,
+                strokeWidth: state.connector.width,
+                shape: state.connector.shape,
+                ends: state.connector.ends,
+                x: 0,
+                y: 0,
+                w: 0,
+                h: 0,
+              },
+            });
+          } else {
+            // Clicked or tiny drag on empty canvas: drop a default standalone arrow (120px)
+            dispatch({
+              type: "addItem",
+              item: {
+                type: "connector",
+                startPoint: { x: world.x, y: world.y },
+                endPoint: { x: world.x + 120, y: world.y },
+                color: state.connector.color,
+                strokeWidth: state.connector.width,
+                shape: state.connector.shape,
+                ends: state.connector.ends,
+                x: 0,
+                y: 0,
+                w: 0,
+                h: 0,
+              },
+            });
+          }
         }
       };
+
       window.addEventListener("pointermove", onMove);
       window.addEventListener("pointerup", onUp);
       return;
@@ -991,7 +1087,8 @@ const ConnectorLayer = ({
   selection: Set<string>;
   view: { x: number; y: number; zoom: number };
   connectorDrag: {
-    sourceId: string;
+    sourceId?: string;
+    startPoint?: { x: number; y: number };
     cursorScreen: { x: number; y: number };
     hoverTargetId: string | null;
   } | null;
@@ -1024,8 +1121,8 @@ const ConnectorLayer = ({
 
   // Endpoints clipped at each item's bbox edge.
   const clippedScreen = (
-    a: { x: number; y: number; w: number; h: number },
-    b: { x: number; y: number; w: number; h: number },
+    a: { x: number; y: number; w: number; h: number; shape?: string },
+    b: { x: number; y: number; w: number; h: number; shape?: string },
   ) => {
     const fc = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
     const tc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
@@ -1036,12 +1133,49 @@ const ConnectorLayer = ({
     return { x1: e1.x, y1: e1.y, x2: e2.x, y2: e2.y };
   };
 
+  // Endpoints for any connector (between items, between item and free point, or purely free points).
+  const getConnectorScreenEndpoints = (c: ConnectorItem) => {
+    const a = c.from ? byId.get(c.from) : undefined;
+    const b = c.to ? byId.get(c.to) : undefined;
+
+    if (a && b) {
+      return clippedScreen(a, b);
+    } else if (a && (b || c.endPoint)) {
+      const tc = b ? { x: b.x + b.w / 2, y: b.y + b.h / 2 } : c.endPoint!;
+      const fc = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+      const exit = rayBoxExit(fc, { x: tc.x - fc.x, y: tc.y - fc.y }, a);
+      const e1 = proj(exit.x, exit.y);
+      const e2 = proj(tc.x, tc.y);
+      return { x1: e1.x, y1: e1.y, x2: e2.x, y2: e2.y };
+    } else if ((a || c.startPoint) && b) {
+      const fc = a ? { x: a.x + a.w / 2, y: a.y + a.h / 2 } : c.startPoint!;
+      const tc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+      const entry = rayBoxExit(tc, { x: fc.x - tc.x, y: fc.y - tc.y }, b);
+      const e1 = proj(fc.x, fc.y);
+      const e2 = proj(entry.x, entry.y);
+      return { x1: e1.x, y1: e1.y, x2: e2.x, y2: e2.y };
+    } else {
+      const sp = c.startPoint ?? { x: c.x, y: c.y };
+      const ep = c.endPoint ?? { x: c.x + c.w, y: c.y + c.h };
+      const e1 = proj(sp.x, sp.y);
+      const e2 = proj(ep.x, ep.y);
+      return { x1: e1.x, y1: e1.y, x2: e2.x, y2: e2.y };
+    }
+  };
+
   // Source center for the in-progress preview.
   const previewLine = (() => {
     if (!connectorDrag) return null;
-    const src = byId.get(connectorDrag.sourceId);
-    if (!src) return null;
-    const sc = proj(src.x + src.w / 2, src.y + src.h / 2);
+    let sc: { x: number; y: number };
+    if (connectorDrag.sourceId) {
+      const src = byId.get(connectorDrag.sourceId);
+      if (!src) return null;
+      sc = proj(src.x + src.w / 2, src.y + src.h / 2);
+    } else if (connectorDrag.startPoint) {
+      sc = proj(connectorDrag.startPoint.x, connectorDrag.startPoint.y);
+    } else {
+      return null;
+    }
     return {
       x1: sc.x,
       y1: sc.y,
@@ -1096,13 +1230,28 @@ const ConnectorLayer = ({
       window.removeEventListener("pointerup", onUp);
       const targetId = hitAt(ev.clientX, ev.clientY);
       setRerouting(null);
-      const currentId = end === "from" ? c.from : c.to;
-      if (targetId && targetId !== currentId) {
-        dispatch({ type: "commitHistory" });
+      const r = svg.getBoundingClientRect();
+      const dropScreen = { x: ev.clientX - r.left, y: ev.clientY - r.top };
+      const dropWorld = screenToWorld(dropScreen, view);
+
+      dispatch({ type: "commitHistory" });
+      if (targetId) {
         dispatch({
           type: "updateItem",
           id: c.id,
-          patch: { [end]: targetId } as Partial<Item>,
+          patch:
+            end === "from"
+              ? ({ from: targetId, startPoint: undefined } as Partial<ConnectorItem>)
+              : ({ to: targetId, endPoint: undefined } as Partial<ConnectorItem>),
+        });
+      } else {
+        dispatch({
+          type: "updateItem",
+          id: c.id,
+          patch:
+            end === "from"
+              ? ({ from: undefined, startPoint: dropWorld } as Partial<ConnectorItem>)
+              : ({ to: undefined, endPoint: dropWorld } as Partial<ConnectorItem>),
         });
       }
     };
@@ -1171,10 +1320,7 @@ const ConnectorLayer = ({
         })()}
 
       {connectors.map((c) => {
-        const a = byId.get(c.from);
-        const b = byId.get(c.to);
-        if (!a || !b) return null;
-        const { x1, y1, x2, y2 } = clippedScreen(a, b);
+        const { x1, y1, x2, y2 } = getConnectorScreenEndpoints(c);
         const isSelected = selection.has(c.id);
         const cw = c.strokeWidth ?? 1.75;
         const d = connectorPath(c.shape ?? "straight", x1, y1, x2, y2);
@@ -1192,7 +1338,7 @@ const ConnectorLayer = ({
               opacity: rerouting?.id === c.id ? 0.4 : 1,
             }}
           >
-            {/* Wide invisible "hit" path for easier clicking, only in select mode. */}
+            {/* Wide invisible "hit" path for easier clicking and dragging, only in select mode. */}
             <path
               d={d}
               fill="none"
@@ -1206,11 +1352,48 @@ const ConnectorLayer = ({
               }}
               onPointerDown={(e) => {
                 e.stopPropagation();
-                dispatch(
-                  e.shiftKey
-                    ? { type: "selectToggle", id: c.id }
-                    : { type: "selectOnly", ids: [c.id] },
+                if (e.shiftKey) {
+                  dispatch({ type: "selectToggle", id: c.id });
+                  return;
+                }
+                dispatch({ type: "selectOnly", ids: [c.id] });
+
+                // Allow dragging connector across canvas
+                const startX = e.clientX;
+                const startY = e.clientY;
+                const dragIds =
+                  selection.has(c.id) && selection.size > 1
+                    ? [...selection]
+                    : [c.id];
+                const origins = new Map(
+                  items
+                    .filter((it) => dragIds.includes(it.id))
+                    .map((it) => [it.id, { x: it.x, y: it.y }]),
                 );
+                let committed = false;
+
+                const onMove = (ev: PointerEvent) => {
+                  const dx = (ev.clientX - startX) / view.zoom;
+                  const dy = (ev.clientY - startY) / view.zoom;
+                  if (dx === 0 && dy === 0) return;
+                  if (!committed) {
+                    dispatch({ type: "commitHistory" });
+                    committed = true;
+                  }
+                  const positions = dragIds.flatMap((id) => {
+                    const o = origins.get(id);
+                    return o ? [{ id, x: o.x + dx, y: o.y + dy }] : [];
+                  });
+                  dispatch({ type: "setItemPositions", positions });
+                };
+
+                const onUp = () => {
+                  window.removeEventListener("pointermove", onMove);
+                  window.removeEventListener("pointerup", onUp);
+                };
+
+                window.addEventListener("pointermove", onMove);
+                window.addEventListener("pointerup", onUp);
               }}
               onDoubleClick={(e) => {
                 e.stopPropagation(); // don't also drop a new text note
@@ -1235,28 +1418,23 @@ const ConnectorLayer = ({
       {/* Endpoint handles for the selected connector, drag to re-attach. */}
       {selectedConnector &&
         (() => {
-          const a = byId.get(selectedConnector.from);
-          const b = byId.get(selectedConnector.to);
-          if (!a || !b) return null;
-          const { x1, y1, x2, y2 } = clippedScreen(a, b);
+          const { x1, y1, x2, y2 } = getConnectorScreenEndpoints(selectedConnector);
           const isR = rerouting?.id === selectedConnector.id;
           const fromPt =
             isR && rerouting!.end === "from" ? rerouting!.cursor : { x: x1, y: y1 };
           const toPt =
             isR && rerouting!.end === "to" ? rerouting!.cursor : { x: x2, y: y2 };
-          // While dragging, preview a dashed line from the anchored item's
-          // centre to the cursor, and outline the item it would attach to.
-          const anchor = isR ? (rerouting!.end === "from" ? b : a) : null;
-          const anchorC = anchor
-            ? proj(anchor.x + anchor.w / 2, anchor.y + anchor.h / 2)
+          // While dragging, preview a dashed line from the anchored other end
+          const anchorPt = isR
+            ? (rerouting!.end === "from" ? { x: x2, y: y2 } : { x: x1, y: y1 })
             : null;
           const hoverT = rerouting?.hoverId ? byId.get(rerouting.hoverId) : null;
           return (
             <>
-              {isR && anchorC && (
+              {isR && anchorPt && (
                 <line
-                  x1={anchorC.x}
-                  y1={anchorC.y}
+                  x1={anchorPt.x}
+                  y1={anchorPt.y}
                   x2={rerouting!.cursor.x}
                   y2={rerouting!.cursor.y}
                   stroke="var(--selection)"
@@ -1320,10 +1498,7 @@ const ConnectorLayer = ({
       {connectors.map((c) => {
         const editing = editingLabel === c.id;
         if (!c.label && !editing) return null;
-        const a = byId.get(c.from);
-        const b = byId.get(c.to);
-        if (!a || !b) return null;
-        const { x1, y1, x2, y2 } = clippedScreen(a, b);
+        const { x1, y1, x2, y2 } = getConnectorScreenEndpoints(c);
         const m = connectorMidpoint(x1, y1, x2, y2);
         const isSelected = selection.has(c.id);
         return (

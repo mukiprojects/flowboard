@@ -14,11 +14,12 @@ type Props = {
 };
 
 // Shared with the editor's store so the theme picked in either place sticks.
-const THEME_KEY = "crboard:theme";
+const THEME_KEY = "flowboard:theme";
+const LEGACY_THEME_KEY = "crboard:theme";
 type Theme = "light" | "dark";
 
 const initialTheme = (): Theme => {
-  const saved = localStorage.getItem(THEME_KEY);
+  const saved = localStorage.getItem(THEME_KEY) || localStorage.getItem(LEGACY_THEME_KEY);
   if (saved === "light" || saved === "dark") return saved;
   return window.matchMedia?.("(prefers-color-scheme: dark)").matches
     ? "dark"
@@ -89,7 +90,7 @@ export const HomeScreen = ({ onOpen }: Props) => {
         }}
       >
         <div style={{ fontSize: 13, fontWeight: 700, letterSpacing: "0.04em" }}>
-          crboard
+          flowboard
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
           <button
@@ -313,15 +314,18 @@ const MiniBoard = ({ board }: { board: Board }) => {
 const MiniItem = ({ it, byId }: { it: Item; byId: Map<string, Item> }) => {
   switch (it.type) {
     case "connector": {
-      const a = byId.get(it.from);
-      const b = byId.get(it.to);
-      if (!a || !b) return null;
+      const a = it.from ? byId.get(it.from) : undefined;
+      const b = it.to ? byId.get(it.to) : undefined;
+      const x1 = a ? a.x + a.w / 2 : it.startPoint ? it.startPoint.x : it.x;
+      const y1 = a ? a.y + a.h / 2 : it.startPoint ? it.startPoint.y : it.y;
+      const x2 = b ? b.x + b.w / 2 : it.endPoint ? it.endPoint.x : it.x + it.w;
+      const y2 = b ? b.y + b.h / 2 : it.endPoint ? it.endPoint.y : it.y + it.h;
       return (
         <line
-          x1={a.x + a.w / 2}
-          y1={a.y + a.h / 2}
-          x2={b.x + b.w / 2}
-          y2={b.y + b.h / 2}
+          x1={x1}
+          y1={y1}
+          x2={x2}
+          y2={y2}
           stroke="var(--text-3)"
           strokeOpacity={0.6}
           strokeWidth={1}

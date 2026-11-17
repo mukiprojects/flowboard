@@ -71,7 +71,7 @@ export type LinkItem = Base & {
 
 // A video the user can trim to a sub-range and loop. Two sources:
 //   - "file": a local video stored inline as a data URL (like ImageItem.src),
-//     so it travels in share links / .html / .crboard exactly like an image.
+//     so it travels in share links / .html / .flowboard exactly like an image.
 //   - "youtube": referenced by id; playback + clip-looping is driven by the
 //     YouTube IFrame Player API at render time.
 // clipStart/clipEnd (seconds) define the visible/looped sub-range. clipEnd null
@@ -138,15 +138,18 @@ export type DrawingItem = Base & {
   vh?: number;
 };
 
-// Connector ("arrow") between two items. The visible line is drawn each
-// render from the endpoints' centers, clipped at each item's bbox so the
-// arrow emerges from the item edge rather than its centre. The base x/y/w/h
-// stores the bbox of the line (recomputed when endpoints move) so connectors
+// Connector ("arrow") between two items or free coordinates on the canvas.
+// The visible line is drawn each render from the endpoints' centers, clipped
+// at each item's bbox so the arrow emerges from the item edge rather than its
+// centre (or anchored directly at free coordinates). The base x/y/w/h stores
+// the bbox of the line (recomputed when endpoints move) so connectors
 // participate in selection-by-rubber-band and storage like any other item.
 export type ConnectorItem = Base & {
   type: "connector";
-  from: string; // item id
-  to: string; // item id
+  from?: string; // item id (optional if startPoint provided)
+  to?: string; // item id (optional if endPoint provided)
+  startPoint?: { x: number; y: number }; // world coordinate if not attached to an item
+  endPoint?: { x: number; y: number }; // world coordinate if not attached to an item
   color?: string; // stroke color; defaults to the theme's muted text
   strokeWidth?: number; // line thickness; defaults to 1.75
   // Line routing: straight (default), a smooth curve, or a right-angle elbow.

@@ -726,14 +726,33 @@ function renderConnectorsLayer(
 
   for (const it of items) {
     if (it.type !== "connector") continue;
-    const a = byId.get(it.from);
-    const b = byId.get(it.to);
-    if (!a || !b) continue;
+    const a = it.from ? byId.get(it.from) : undefined;
+    const b = it.to ? byId.get(it.to) : undefined;
+    if (!a && !it.startPoint) continue;
+    if (!b && !it.endPoint) continue;
 
-    const fc = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
-    const tc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
-    const e1 = rayBoxExit(fc, { x: tc.x - fc.x, y: tc.y - fc.y }, a);
-    const e2 = rayBoxExit(tc, { x: fc.x - tc.x, y: fc.y - tc.y }, b);
+    let e1: { x: number; y: number };
+    let e2: { x: number; y: number };
+
+    if (a && b) {
+      const fc = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+      const tc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+      e1 = rayBoxExit(fc, { x: tc.x - fc.x, y: tc.y - fc.y }, a);
+      e2 = rayBoxExit(tc, { x: fc.x - tc.x, y: fc.y - tc.y }, b);
+    } else if (a && (b || it.endPoint)) {
+      const tc = b ? { x: b.x + b.w / 2, y: b.y + b.h / 2 } : it.endPoint!;
+      const fc = { x: a.x + a.w / 2, y: a.y + a.h / 2 };
+      e1 = rayBoxExit(fc, { x: tc.x - fc.x, y: tc.y - fc.y }, a);
+      e2 = tc;
+    } else if ((a || it.startPoint) && b) {
+      const fc = a ? { x: a.x + a.w / 2, y: a.y + a.h / 2 } : it.startPoint!;
+      const tc = { x: b.x + b.w / 2, y: b.y + b.h / 2 };
+      e1 = fc;
+      e2 = rayBoxExit(tc, { x: fc.x - tc.x, y: fc.y - tc.y }, b);
+    } else {
+      e1 = it.startPoint ?? { x: it.x, y: it.y };
+      e2 = it.endPoint ?? { x: it.x + it.w, y: it.y + it.h };
+    }
 
     const x1 = wx(e1.x), y1 = wy(e1.y);
     const x2 = wx(e2.x), y2 = wy(e2.y);
